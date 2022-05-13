@@ -1,0 +1,7 @@
+# 生成物を除外
+client
+server
+*.exe
+
+# エディタ固有のデータを除外
+.vscode/
