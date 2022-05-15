@@ -38,11 +38,7 @@ int  main(int argc, char ** argv) {
             fprintf(stderr, "[disconnect] \"%s\" disconnect.\n", (char*)event.peer->data);
             char buffer[BUFFERSIZE] = { 0 };
             sprintf(buffer, "%s has disconnected.", (char*)event.peer->data);
-            for (size_t i = 0; i < server->peerCount; i++) {
-                if(&server->peers[i] != event.peer) {
-                    Send_ENet_Packet(&server->peers[i], 0, buffer, strlen(buffer)+1, false);
-                }
-            }
+            Broadcast_ENet_Packet(server, 0, buffer, strlen(buffer)+1, false);
             enet_host_flush(server);
             free(event.peer->data);
             event.peer->data = NULL;
@@ -61,11 +57,7 @@ int  main(int argc, char ** argv) {
             } else {
                 char buffer[BUFFERSIZE] = { 0 };
                 sprintf(buffer, "%s: %s", (char*) event.peer->data, (char*)event.packet->data);
-                for (size_t i = 0; i < server->peerCount; i++) {
-                    if(&server->peers[i] != event.peer) {
-                        Send_ENet_Packet(&server->peers[i], 0, buffer, strlen(buffer)+1, false);
-                    }
-                }
+                Broadcast_ENet_Packet(server, 0, buffer, strlen(buffer)+1, false);
                 enet_host_flush(server);
                 fprintf(stderr, "[message] %s\n", buffer);
             }
