@@ -56,8 +56,7 @@ int  main(int argc, char ** argv) {
                 event.peer->data = malloc(strlen((char*) event.packet->data)+1);
                 strcpy((char*) event.peer->data, (char*) event.packet->data);
                 sprintf(buffer, "%s has connected\n", (char*) event.packet->data);
-                ENetPacket *packet = enet_packet_create(buffer, strlen(buffer)+1, 0);
-                enet_host_broadcast(server, 0, packet);
+                Broadcast_ENet_Packet(server, 0, buffer, strlen(buffer)+1, false);
                 enet_host_flush(server);
             } else {
                 char buffer[BUFFERSIZE] = { 0 };
