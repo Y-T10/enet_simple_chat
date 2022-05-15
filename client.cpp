@@ -2,6 +2,7 @@
 #include <string.h>
 #include <enet/enet.h>
 #include "config.hpp"
+#include "enet_send.hpp"
 
 #include <unistd.h>
 
@@ -47,8 +48,7 @@ int  main(int argc, char ** argv) {
     if (enet_host_service(client, &event, 1000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
         printf("Connection to %s succeeded.\n", HOST);
         connected = 1;
-        ENetPacket *packet = enet_packet_create(argv[1], strlen(argv[1])+1, ENET_PACKET_FLAG_RELIABLE);
-        enet_peer_send(peer, 0, packet);
+        Send_ENet_Packet(peer, 0, argv[1], strlen(argv[1])+1, true);
         enet_host_flush(client);
     } else {
         enet_peer_reset(peer);
@@ -80,8 +80,7 @@ int  main(int argc, char ** argv) {
                     continue;
                 }
 
-                ENetPacket *packet = enet_packet_create(buffer, strlen(buffer)+1, ENET_PACKET_FLAG_RELIABLE);
-                enet_peer_send(peer, 0, packet);
+                Send_ENet_Packet(peer, 0, buffer, strlen(buffer)+1, false);
             }
         }
     }
