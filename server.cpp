@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <enet/enet.h>
 #include "config.hpp"
+#include "enet_send.hpp"
 
 void PrintPacket(const ENetPacket* packet){
     fprintf(stderr, "[Packet] ");
@@ -37,10 +38,9 @@ int  main(int argc, char ** argv) {
             fprintf(stderr, "[disconnect] \"%s\" disconnect.\n", (char*)event.peer->data);
             char buffer[BUFFERSIZE] = { 0 };
             sprintf(buffer, "%s has disconnected.", (char*)event.peer->data);
-            ENetPacket *packet = enet_packet_create(buffer, strlen(buffer)+1, 0);
             for (size_t i = 0; i < server->peerCount; i++) {
                 if(&server->peers[i] != event.peer) {
-                    enet_peer_send(&server->peers[i], 0, packet);
+                    Send_ENet_Packet(&server->peers[i], 0, buffer, strlen(buffer)+1, false);
                 }
             }
             enet_host_flush(server);
@@ -62,10 +62,9 @@ int  main(int argc, char ** argv) {
             } else {
                 char buffer[BUFFERSIZE] = { 0 };
                 sprintf(buffer, "%s: %s", (char*) event.peer->data, (char*)event.packet->data);
-                ENetPacket *packet = enet_packet_create(buffer, strlen(buffer)+1, 0);
                 for (size_t i = 0; i < server->peerCount; i++) {
                     if(&server->peers[i] != event.peer) {
-                        enet_peer_send(&server->peers[i], 0, packet);
+                        Send_ENet_Packet(&server->peers[i], 0, buffer, strlen(buffer)+1, false);
                     }
                 }
                 enet_host_flush(server);
