@@ -69,7 +69,7 @@ int  main(int argc, char ** argv) {
         }
         if(event.type == ENET_EVENT_TYPE_NONE){
             if (connected) {
-                printf("Input: ");
+                //printf("Input: ");
                 const char *buffer = "hi all";
                 //char  buffer[BUFFERSIZE] = { 0 };
                 //scanf("%[^\n]%*c", buffer);
@@ -79,7 +79,6 @@ int  main(int argc, char ** argv) {
                     enet_peer_disconnect(peer, 0);
                     continue;
                 }
-
                 Send_ENet_Packet(peer, 0, buffer, strlen(buffer)+1, false);
             }
         }
