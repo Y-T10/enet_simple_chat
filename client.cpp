@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <enet/enet.h>
+#include<cassert>
+#include<boost/noncopyable.hpp>
 #include "config.hpp"
 #include "enet_send.hpp"
 
@@ -14,6 +16,31 @@ void PrintPacket(const ENetPacket* packet){
     }
     fprintf(stderr, "\n");
 }
+
+class Colleague : private boost::noncopyable {
+    public:
+    Colleague(Meditator* meditator) noexcept
+    :m_meditator(meditator){
+        assert(meditator != nullptr);
+    };
+    virtual ~Colleague() = default;
+
+    virtual void notify_change() noexcept{
+        assert(m_meditator != nullptr);
+        m_meditator->colleague_change(this);
+    }
+    private:
+    Meditator* m_meditator;
+};
+
+class Meditator {
+    public:
+    Meditator() noexcept = default;
+    virtual ~Meditator() = default;
+
+    virtual void create_colleagues() noexcept = 0;
+    virtual void colleague_change(Colleague* Colleague) noexcept = 0;
+};
 
 int  main(int argc, char ** argv) {
     int connected=0;
