@@ -19,12 +19,14 @@ void PrintPacket(const ENetPacket* packet){
 
 class Colleague : private boost::noncopyable {
     public:
-    Colleague(Meditator* meditator) noexcept
-    :m_meditator(meditator){
-        assert(meditator != nullptr);
-    };
+    Colleague() noexcept
+    :m_meditator(nullptr){};
     virtual ~Colleague() = default;
 
+    virtual void set_meditator(Meditator* meditator) noexcept{
+        assert(meditator != nullptr);
+        m_meditator = meditator;
+    }
     virtual void notify_change() noexcept{
         assert(m_meditator != nullptr);
         m_meditator->colleague_change(this);
