@@ -3,6 +3,8 @@
 #include <enet/enet.h>
 #include<cassert>
 #include<boost/noncopyable.hpp>
+#include<string>
+#include<iostream>
 #include "config.hpp"
 #include "enet_send.hpp"
 
@@ -41,7 +43,43 @@ class Meditator {
     virtual ~Meditator() = default;
 
     virtual void create_colleagues() noexcept = 0;
-    virtual void colleague_change(Colleague* Colleague) noexcept = 0;
+    virtual void colleague_change(Colleague* colleague) noexcept = 0;
+};
+
+class chat_io : public Colleague {
+    public:
+    chat_io() noexcept = default;
+    ~chat_io() = default;
+
+    const std::string fetch_latest_message() noexcept{
+        return m_latest_message;
+    }
+    void add_message(const std::string& message) noexcept{
+        std::cout << message << std::endl;
+    }
+    void write_message() noexcept{
+        std::cin >> m_latest_message;
+        notify_change();
+    }
+    private:
+    std::string m_latest_message;
+};
+
+class chat_system : public Meditator {
+    public:
+    void create_colleagues() noexcept override{
+        m_io = new chat_io;
+        m_io->set_meditator(this);
+    };
+
+    void colleague_change(Colleague* colleague) noexcept override{
+        if(m_io == colleague){
+            const auto msg = m_io->fetch_latest_message();
+        }
+    }
+
+    private:
+    chat_io *m_io;
 };
 
 int  main(int argc, char ** argv) {
