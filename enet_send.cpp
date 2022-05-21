@@ -15,7 +15,7 @@ const bool Send_ENet_Packet(ENetPeer* dst, const size_t channel, const void* dat
     return true;
 }
 
-const bool Send_ENet_Packet(ENetPeer* dst, const size_t channel, const std::vector<std::byte>& data, const bool is_reliable){
+const bool Send_ENet_Packet(ENetPeer* dst, const size_t channel, const std::vector<uint8_t>& data, const bool is_reliable){
     return Send_ENet_Packet(dst, channel, data.data(), data.size(), is_reliable);
 }
 
