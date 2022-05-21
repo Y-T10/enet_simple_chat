@@ -64,7 +64,7 @@ class chat_io : public Colleague {
     ,m_message_receiver(){};
     ~chat_io() = default;
 
-    const std::string fetch_latest_message() noexcept{
+    const std::string last_message() noexcept{
         return m_latest_message;
     }
     void add_message(const std::string& message) noexcept{
@@ -106,7 +106,7 @@ class chat_communication : public Colleague{
         }
     }
 
-    const bool connection(const std::string& hostname, const enet_uint16 port) noexcept{
+    const bool try_connection(const std::string& hostname, const enet_uint16 port) noexcept{
         m_last_event = ENET_EVENT_TYPE_NONE;
         if(!this->isVailed()){
             return false;
@@ -189,25 +189,67 @@ class chat_communication : public Colleague{
     ENetEventType m_last_event;
 };
 
-class chat_system : public Meditator {
+class chat_system : public Meditator , private boost::noncopyable {
     public:
+    chat_system() noexcept
+    :m_io(nullptr)
+    ,m_communicate(nullptr)
+    ,m_quit_flag(false){
+        create_colleagues();
+    }
+
+    ~chat_system(){
+        m_io = nullptr;
+        m_communicate = nullptr;
+    }
+
     void create_colleagues() noexcept override{
         m_io = std::make_unique<chat_io>();
         m_io->set_meditator(this);
+        m_communicate = std::make_unique<chat_communication>();
+        m_communicate->set_meditator(this);
     };
+
+    const bool initilize(){
+        return m_communicate->try_connection(HOST, PORT);
+    }
 
     void colleague_change(Colleague* colleague) noexcept override{
         if(m_io.get() == colleague){
-            const auto msg = m_io->fetch_latest_message();
+            const auto msg = m_io->last_message();
+            const auto msg_vector = std::vector<std::byte>(msg.begin(), msg.end());
+            m_communicate->send(msg_vector, 0);
+            return;
         }
+        if(m_communicate.get() == colleague){
+            assert(m_communicate->isVailed());
+            const auto event = m_communicate->lastEvent();
+            if(event == ENET_EVENT_TYPE_RECEIVE){
+                const auto recv_data = m_communicate->lastReceivedData();
+                m_io->add_message(std::string(recv_data.begin(), recv_data.end()));
+                return;
+            }
+            if(event == ENET_EVENT_TYPE_DISCONNECT){
+                m_io->add_message("disconnected.");
+                m_quit_flag = true;
+                return;
+            }
+        }
+    }
+
+    const bool is_quit() noexcept{
+        return m_quit_flag;
     }
 
     void update() noexcept{
         m_io->update();
+        m_communicate->update();
     }
 
     private:
     std::unique_ptr<chat_io> m_io;
+    std::unique_ptr<chat_communication> m_communicate;
+    bool m_quit_flag;
 };
 
 int  main(int argc, char ** argv) {
