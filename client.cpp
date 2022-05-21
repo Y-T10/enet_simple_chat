@@ -124,6 +124,7 @@ class chat_communication : public Colleague{
         if(enet_host_service(m_client, &event, 1000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
             assert(m_server_peer == event.peer);
             m_last_event = ENET_EVENT_TYPE_CONNECT;
+            this->notify_change();
             return true;
         }
         enet_peer_reset(m_server_peer);
@@ -232,6 +233,13 @@ class chat_system : public Meditator , private boost::noncopyable {
         if(m_communicate.get() == colleague){
             assert(m_communicate->isVailed());
             const auto event = m_communicate->lastEvent();
+            if(event == ENET_EVENT_TYPE_CONNECT){
+                const auto username = std::string("default_name");
+                const auto msg_vector = std::vector<std::byte>(username.begin(), username.end());
+                m_communicate->add_sent_data(msg_vector, 0);
+                m_communicate->flush();;
+                return;
+            }
             if(event == ENET_EVENT_TYPE_RECEIVE){
                 const auto recv_data = m_communicate->lastReceivedData();
                 m_io->add_message("Message: " + std::string(recv_data.begin(), recv_data.end()));
