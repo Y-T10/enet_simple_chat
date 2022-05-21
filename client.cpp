@@ -6,6 +6,7 @@
 #include<string>
 #include<iostream>
 #include<functional>
+#include<cstddef>
 #include<future>
 #include<memory>
 #include "config.hpp"
@@ -20,6 +21,13 @@ void PrintPacket(const ENetPacket* packet){
         fprintf(stderr, "%x ", packet->data[i]);
     }
     fprintf(stderr, "\n");
+}
+
+const ENetAddress CreateENetAddress(const std::string& hostname, const enet_uint16 port){
+    ENetAddress address;
+    enet_address_set_host(&address, hostname.data());
+    address.port = port;
+    return address;
 }
 
 class Colleague : private boost::noncopyable {
@@ -80,6 +88,105 @@ class chat_io : public Colleague {
     private:
     std::string m_latest_message;
     std::future<std::string> m_message_receiver;
+};
+
+class chat_communication : public Colleague{
+    public:
+    chat_communication() noexcept
+    :m_client(enet_host_create(NULL, 1, 2, 5760/8, 1440/8))
+    ,m_server_peer(NULL)
+    ,m_last_recived()
+    ,m_last_event(ENET_EVENT_TYPE_NONE){};
+    ~chat_communication(){
+        if(m_server_peer != NULL){
+            enet_peer_reset(m_server_peer);
+        }
+        if(m_client != NULL){
+            enet_host_destroy(m_client);
+        }
+    }
+
+    const bool connection(const std::string& hostname, const enet_uint16 port) noexcept{
+        m_last_event = ENET_EVENT_TYPE_NONE;
+        if(!this->isVailed()){
+            return false;
+        }
+        if(m_server_peer != NULL){
+            return false;
+        }
+        const ENetAddress address = CreateENetAddress(hostname, port);
+        m_server_peer = enet_host_connect(m_client, &address, 2, 0);
+        if (m_server_peer == NULL) {
+            return false;
+        }
+
+        ENetEvent event;
+        if(enet_host_service(m_client, &event, 1000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
+            assert(m_server_peer == event.peer);
+            m_last_event = ENET_EVENT_TYPE_CONNECT;
+            return true;
+        }
+        enet_peer_reset(m_server_peer);
+        m_server_peer = NULL;
+        return false;
+    };
+
+    void update() noexcept{
+        if(!this->isVailed()){
+            return;
+        }
+        ENetEvent event;
+        if(enet_host_service(m_client, &event, 0) < 0){
+            return;
+        }
+        assert(event.type != ENET_EVENT_TYPE_CONNECT);
+        m_last_event = event.type;
+        if(event.type == ENET_EVENT_TYPE_RECEIVE){
+            const enet_uint8* recv_begin = event.packet->data;
+            const size_t recv_length = event.packet->dataLength;
+            const std::vector<std::byte> received(recv_begin, recv_begin + recv_length);
+            m_last_recived = std::move(received);
+            enet_packet_destroy(event.packet);
+            notify_change();
+            return;
+        }
+        if(event.type == ENET_EVENT_TYPE_DISCONNECT){
+            assert(event.peer == m_server_peer);
+            assert(m_server_peer != NULL);
+            enet_peer_reset(m_server_peer);
+            m_server_peer = NULL;
+            notify_change();
+            return;
+        }
+    }
+
+    const bool send(const std::vector<std::byte>& data, const size_t ch) noexcept{
+        if(!this->isVailed() || m_server_peer == NULL){
+            return false;
+        }
+        return Send_ENet_Packet(m_server_peer, ch, data, true);
+    }
+
+    const std::vector<std::byte> lastReceivedData() noexcept{
+        return m_last_recived;
+    }
+
+    const ENetEventType lastEvent() noexcept{
+        return m_last_event;
+    }
+
+    const bool isVailed() noexcept{
+        if(m_client == NULL){
+            return false;
+        }
+        return true;
+    }
+
+    private:
+    ENetHost *m_client;
+    ENetPeer *m_server_peer;
+    std::vector<std::byte> m_last_recived;
+    ENetEventType m_last_event;
 };
 
 class chat_system : public Meditator {
