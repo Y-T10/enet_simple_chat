@@ -147,8 +147,9 @@ class chat_communication : public Colleague{
         if(event.type == ENET_EVENT_TYPE_RECEIVE){
             const enet_uint8* recv_begin = event.packet->data;
             const size_t recv_length = event.packet->dataLength;
-            const std::vector<std::byte> received(recv_begin, recv_begin + recv_length);
-            m_last_recived = std::move(received);
+            m_last_recived.clear();
+            m_last_recived.reserve(recv_length);
+            std::copy(recv_begin, recv_begin + recv_length, std::back_inserter(m_last_recived));
             enet_packet_destroy(event.packet);
             notify_change();
             return;
