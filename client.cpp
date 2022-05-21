@@ -171,6 +171,13 @@ class chat_communication : public Colleague{
         return Send_ENet_Packet(m_server_peer, ch, data, true);
     }
 
+    const bool add_sent_data(const std::string& str, const size_t ch) noexcept{
+        if(!this->isVailed() || !this->isConnected()){
+            return false;
+        }
+        return Send_ENet_Packet(m_server_peer, ch, str, true);
+    }
+
     void flush() noexcept{
         if(!this->isVailed() || !this->isConnected()){
             return;
