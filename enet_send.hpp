@@ -1,6 +1,8 @@
 #pragma once
 
 #include<enet/enet.h>
+#include<cstddef>
+#include<vector>
 
 /**
  * パケット送信関数
@@ -12,6 +14,7 @@
  * @return 送信の成否
  */
 const bool Send_ENet_Packet(ENetPeer* dst, const size_t channel, const void* data, const size_t data_size, const bool is_reliable);
+const bool Send_ENet_Packet(ENetPeer* dst, const size_t channel, const std::vector<std::byte>& data, const bool is_reliable);
 
 /**
  * パケット一斉送信関数
