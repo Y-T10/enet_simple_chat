@@ -160,11 +160,18 @@ class chat_communication : public Colleague{
         }
     }
 
-    const bool send(const std::vector<std::byte>& data, const size_t ch) noexcept{
+    const bool add_sent_data(const std::vector<std::byte>& data, const size_t ch) noexcept{
         if(!this->isVailed() || m_server_peer == NULL){
             return false;
         }
         return Send_ENet_Packet(m_server_peer, ch, data, true);
+    }
+
+    void flush() noexcept{
+        if(!this->isVailed() || m_server_peer == NULL){
+            return;
+        }
+        enet_host_flush(m_client);
     }
 
     const std::vector<std::byte> lastReceivedData() noexcept{
@@ -218,7 +225,8 @@ class chat_system : public Meditator , private boost::noncopyable {
         if(m_io.get() == colleague){
             const auto msg = m_io->last_message();
             const auto msg_vector = std::vector<std::byte>(msg.begin(), msg.end());
-            m_communicate->send(msg_vector, 0);
+            m_communicate->add_sent_data(msg_vector, 0);
+            m_communicate->flush();
             return;
         }
         if(m_communicate.get() == colleague){
