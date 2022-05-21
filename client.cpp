@@ -9,6 +9,7 @@
 #include<cstddef>
 #include<future>
 #include<memory>
+#include<thread>
 #include "config.hpp"
 #include "enet_send.hpp"
 
