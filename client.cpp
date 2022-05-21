@@ -226,7 +226,7 @@ class chat_system : public Meditator , private boost::noncopyable {
             const auto event = m_communicate->lastEvent();
             if(event == ENET_EVENT_TYPE_RECEIVE){
                 const auto recv_data = m_communicate->lastReceivedData();
-                m_io->add_message(std::string(recv_data.begin(), recv_data.end()));
+                m_io->add_message("Message: " + std::string(recv_data.begin(), recv_data.end()));
                 return;
             }
             if(event == ENET_EVENT_TYPE_DISCONNECT){
