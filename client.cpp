@@ -10,6 +10,7 @@
 #include<future>
 #include<memory>
 #include<thread>
+#include<cstdint>
 #include "config.hpp"
 #include "enet_send.hpp"
 
@@ -145,11 +146,13 @@ class chat_communication : public Colleague{
         assert(event.type != ENET_EVENT_TYPE_CONNECT);
         m_last_event = event.type;
         if(event.type == ENET_EVENT_TYPE_RECEIVE){
-            const enet_uint8* recv_begin = event.packet->data;
-            const size_t recv_length = event.packet->dataLength;
+            const auto recv_vector = std::vector<uint8_t>(
+                event.packet->data,
+                event.packet->data + event.packet->dataLength
+            );
             m_last_recived.clear();
-            m_last_recived.reserve(recv_length);
-            std::copy(recv_begin, recv_begin + recv_length, std::back_inserter(m_last_recived));
+            m_last_recived.reserve(recv_vector.size());
+            std::copy(recv_vector.begin(), recv_vector.end(), std::back_inserter(m_last_recived));
             enet_packet_destroy(event.packet);
             notify_change();
             return;
@@ -164,7 +167,7 @@ class chat_communication : public Colleague{
         }
     }
 
-    const bool add_sent_data(const std::vector<std::byte>& data, const size_t ch) noexcept{
+    const bool add_sent_data(const std::vector<uint8_t>& data, const size_t ch) noexcept{
         if(!this->isVailed() || !this->isConnected()){
             return false;
         }
@@ -185,7 +188,7 @@ class chat_communication : public Colleague{
         enet_host_flush(m_client);
     }
 
-    const std::vector<std::byte> lastReceivedData() noexcept{
+    const std::vector<uint8_t> lastReceivedData() noexcept{
         return m_last_recived;
     }
 
@@ -207,7 +210,7 @@ class chat_communication : public Colleague{
     private:
     ENetHost *m_client;
     ENetPeer *m_server_peer;
-    std::vector<std::byte> m_last_recived;
+    std::vector<uint8_t> m_last_recived;
     ENetEventType m_last_event;
 };
 
@@ -243,8 +246,7 @@ class chat_system : public Meditator , private boost::noncopyable {
             assert(m_communicate->isVailed());
             assert(m_communicate->isConnected());
             const auto msg = m_io->last_message();
-            const auto msg_vector = std::vector<std::byte>(msg.begin(), msg.end());
-            m_communicate->add_sent_data(msg_vector, 0);
+            m_communicate->add_sent_data(msg, 0);
             m_communicate->flush();
             return;
         }
@@ -253,8 +255,7 @@ class chat_system : public Meditator , private boost::noncopyable {
             const auto event = m_communicate->lastEvent();
             if(event == ENET_EVENT_TYPE_CONNECT){
                 assert(m_communicate->isConnected());
-                const auto msg_vector = std::vector<std::byte>(m_username.begin(), m_username.end());
-                m_communicate->add_sent_data(msg_vector, 0);
+                m_communicate->add_sent_data(m_username, 0);
                 m_communicate->flush();;
                 return;
             }
