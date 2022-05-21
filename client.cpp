@@ -1,12 +1,8 @@
-#include <stdio.h>
-#include <string.h>
-#include <enet/enet.h>
+#include<enet/enet.h>
 #include<cassert>
 #include<boost/noncopyable.hpp>
 #include<string>
 #include<iostream>
-#include<functional>
-#include<cstddef>
 #include<future>
 #include<memory>
 #include<thread>
