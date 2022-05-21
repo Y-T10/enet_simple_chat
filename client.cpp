@@ -5,6 +5,9 @@
 #include<boost/noncopyable.hpp>
 #include<string>
 #include<iostream>
+#include<functional>
+#include<future>
+#include<memory>
 #include "config.hpp"
 #include "enet_send.hpp"
 
@@ -48,7 +51,9 @@ class Meditator {
 
 class chat_io : public Colleague {
     public:
-    chat_io() noexcept = default;
+    chat_io() noexcept
+    :m_latest_message("")
+    ,m_message_receiver(){};
     ~chat_io() = default;
 
     const std::string fetch_latest_message() noexcept{
@@ -57,29 +62,45 @@ class chat_io : public Colleague {
     void add_message(const std::string& message) noexcept{
         std::cout << message << std::endl;
     }
-    void write_message() noexcept{
-        std::cin >> m_latest_message;
-        notify_change();
+    void update() noexcept{
+        const auto read_cin = []() -> std::string {
+            std::string message = "";
+            std::cin >> message;
+            return message;
+        };
+        if(!m_message_receiver.valid()){
+            m_message_receiver = std::async(std::launch::async, read_cin);
+        }
+        if(m_message_receiver.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+            m_latest_message = m_message_receiver.get();
+            m_message_receiver = std::async(std::launch::async, read_cin);
+            notify_change();
+        }
     }
     private:
     std::string m_latest_message;
+    std::future<std::string> m_message_receiver;
 };
 
 class chat_system : public Meditator {
     public:
     void create_colleagues() noexcept override{
-        m_io = new chat_io;
+        m_io = std::make_unique<chat_io>();
         m_io->set_meditator(this);
     };
 
     void colleague_change(Colleague* colleague) noexcept override{
-        if(m_io == colleague){
+        if(m_io.get() == colleague){
             const auto msg = m_io->fetch_latest_message();
         }
     }
 
+    void update() noexcept{
+        m_io->update();
+    }
+
     private:
-    chat_io *m_io;
+    std::unique_ptr<chat_io> m_io;
 };
 
 int  main(int argc, char ** argv) {
