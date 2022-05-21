@@ -162,14 +162,14 @@ class chat_communication : public Colleague{
     }
 
     const bool add_sent_data(const std::vector<std::byte>& data, const size_t ch) noexcept{
-        if(!this->isVailed() || m_server_peer == NULL){
+        if(!this->isVailed() || !this->isConnected()){
             return false;
         }
         return Send_ENet_Packet(m_server_peer, ch, data, true);
     }
 
     void flush() noexcept{
-        if(!this->isVailed() || m_server_peer == NULL){
+        if(!this->isVailed() || !this->isConnected()){
             return;
         }
         enet_host_flush(m_client);
@@ -188,6 +188,10 @@ class chat_communication : public Colleague{
             return false;
         }
         return true;
+    }
+
+    const bool isConnected() noexcept{
+        return m_server_peer != NULL;
     }
 
     private:
@@ -224,6 +228,8 @@ class chat_system : public Meditator , private boost::noncopyable {
 
     void colleague_change(Colleague* colleague) noexcept override{
         if(m_io.get() == colleague){
+            assert(m_communicate->isVailed());
+            assert(m_communicate->isConnected());
             const auto msg = m_io->last_message();
             const auto msg_vector = std::vector<std::byte>(msg.begin(), msg.end());
             m_communicate->add_sent_data(msg_vector, 0);
@@ -234,6 +240,7 @@ class chat_system : public Meditator , private boost::noncopyable {
             assert(m_communicate->isVailed());
             const auto event = m_communicate->lastEvent();
             if(event == ENET_EVENT_TYPE_CONNECT){
+                assert(m_communicate->isConnected());
                 const auto username = std::string("default_name");
                 const auto msg_vector = std::vector<std::byte>(username.begin(), username.end());
                 m_communicate->add_sent_data(msg_vector, 0);
@@ -241,11 +248,13 @@ class chat_system : public Meditator , private boost::noncopyable {
                 return;
             }
             if(event == ENET_EVENT_TYPE_RECEIVE){
+                assert(m_communicate->isConnected());
                 const auto recv_data = m_communicate->lastReceivedData();
                 m_io->add_message("Message: " + std::string(recv_data.begin(), recv_data.end()));
                 return;
             }
             if(event == ENET_EVENT_TYPE_DISCONNECT){
+                assert(!m_communicate->isConnected());
                 m_io->add_message("disconnected.");
                 m_quit_flag = true;
                 return;
