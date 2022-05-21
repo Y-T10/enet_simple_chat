@@ -8,3 +8,8 @@ client: client.o enet_send.o
 
 %.o: %.cpp
 	g++ -Wall -c $^
+
+clean:
+	-@rm *.o
+	-@rm server.exe
+	-@rm client.exe
