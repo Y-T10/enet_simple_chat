@@ -30,6 +30,16 @@ const ENetAddress CreateENetAddress(const std::string& hostname, const enet_uint
     return address;
 }
 
+class Colleague;
+class Meditator {
+    public:
+    Meditator() noexcept = default;
+    virtual ~Meditator() = default;
+
+    virtual void create_colleagues() noexcept = 0;
+    virtual void colleague_change(Colleague* colleague) noexcept = 0;
+};
+
 class Colleague : private boost::noncopyable {
     public:
     Colleague() noexcept
@@ -46,15 +56,6 @@ class Colleague : private boost::noncopyable {
     }
     private:
     Meditator* m_meditator;
-};
-
-class Meditator {
-    public:
-    Meditator() noexcept = default;
-    virtual ~Meditator() = default;
-
-    virtual void create_colleagues() noexcept = 0;
-    virtual void colleague_change(Colleague* colleague) noexcept = 0;
 };
 
 class chat_io : public Colleague {
