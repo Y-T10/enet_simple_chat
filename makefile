@@ -1,7 +1,7 @@
 ENET_FLAGS:=$$(pkgconf --cflags libenet)
 ENET_LDLIBS:=$$(pkgconf --libs libenet)
 CXXFLAGS:=-Wall -std=c++20 $(ENET_FLAGS)
-LDLIBS:=$(ENET_LDLIBS)
+LDLIBS:=-lpthread $(ENET_LDLIBS)
 
 all: server client
 
