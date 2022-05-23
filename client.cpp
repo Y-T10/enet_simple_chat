@@ -43,6 +43,7 @@ class chat_io : public Colleague {
         std::cout << message << std::endl;
     }
     void update() noexcept{
+        ///文字入力をイベントハンドルに変更する
         const auto read_cin = []() -> std::string {
             std::string message = "";
             std::cin >> message;
