@@ -20,7 +20,7 @@ const bool Send_ENet_Packet(ENetPeer* dst, const size_t channel, const std::vect
 }
 
 const bool Send_ENet_Packet(ENetPeer* dst, const size_t channel, const std::string& data, const bool is_reliable){
-    return Send_ENet_Packet(dst, channel, data.data(), data.size(), is_reliable);
+    return Send_ENet_Packet(dst, channel, data.data(), data.size() + 1, is_reliable);
 }
 
 const bool Broadcast_ENet_Packet(ENetHost* server, const size_t channel, const void* data, const size_t data_size, const bool is_reliable){
