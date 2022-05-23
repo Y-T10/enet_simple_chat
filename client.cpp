@@ -176,6 +176,10 @@ class chat_communication : public Colleague{
         return m_server_peer != NULL;
     }
 
+    const void requestDisconnection() noexcept{
+        enet_peer_disconnect(m_server_peer, 0);
+    }
+
     private:
     ENetHost *m_client;
     ENetPeer *m_server_peer;
@@ -215,6 +219,10 @@ class chat_system : public Meditator , private boost::noncopyable {
             assert(m_communicate->isVailed());
             assert(m_communicate->isConnected());
             const auto msg = m_io->last_message();
+            if(msg == "q" && !m_quit_flag){
+                m_communicate->requestDisconnection();
+                return;
+            }
             m_communicate->add_sent_data(msg, 0);
             m_communicate->flush();
             return;
