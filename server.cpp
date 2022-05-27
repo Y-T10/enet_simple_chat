@@ -181,6 +181,14 @@ class chat_net : public Colleague {
         return Broadcast_ENet_Packet(m_server, ch, data.data(), data.size(), true);
     }
 
+    const bool send_to_everyone(const size_t ch, const std::string& str) noexcept{
+        return Broadcast_ENet_Packet(m_server, ch, str, true);
+    }
+
+    void flush_send() noexcept{
+        enet_host_flush(m_server);
+    }
+
     private:
     ENetHost *m_server;
     std::vector<uint8_t> m_last_recived;
