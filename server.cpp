@@ -66,11 +66,9 @@ class chat_net : public Colleague {
             //イベントを処理する
             assert(any_of(m_server->peers, m_server->peers + m_server->peerCount, event.peer));
             assert(event.peer > m_server->peers);
+            //最新の受信元IDを更新する
+            m_last_from = static_cast<ClientID>(event.peer - m_server->peers);
             if(event.type == ENET_EVENT_TYPE_CONNECT){
-                //割り当てるIDを取得
-                const ClientID new_id = static_cast<ClientID>(event.peer - m_server->peers);
-                //最新の受信元IDを更新する
-                m_last_from = new_id;
                 //イベントを設定
                 m_last_event = NetEvent::CONNECT;
                 notify_change();
@@ -82,8 +80,6 @@ class chat_net : public Colleague {
                     event.packet->data,
                     event.packet->data + event.packet->dataLength
                 );
-                //受信元を更新
-                m_last_from = static_cast<ClientID>(event.peer - m_server->peers);
                 //イベントを設定
                 m_last_event = NetEvent::RECEIVE;
                 //パケットを削除
@@ -92,8 +88,6 @@ class chat_net : public Colleague {
                 continue;
             }
             if(event.type == ENET_EVENT_TYPE_DISCONNECT){
-                //受信元を更新
-                m_last_from = static_cast<ClientID>(event.peer - m_server->peers);
                 //イベントを設定
                 m_last_event = NetEvent::DISCONNECT;
                 notify_change();
