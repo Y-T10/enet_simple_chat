@@ -62,6 +62,13 @@ class chat_user_namager : public Colleague {
         return m_user_list[user_id];
     };
 
+    void replace_user_info(const ClientID user_id, const user_info& info) noexcept{
+        if(m_user_list.size() <= user_id || !m_user_list[user_id].has_value()){
+            return;
+        }
+        m_user_list[user_id] = info;
+    };
+
     void remove_user_info(const ClientID user_id) noexcept{
         if(m_user_list.size() > user_id){
             return;
