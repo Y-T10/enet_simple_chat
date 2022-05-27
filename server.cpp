@@ -6,6 +6,7 @@
 #include "enet_send.hpp"
 #include "meditator.hpp"
 #include<algorithm>
+#include<memory>
 
 void PrintPacket(const ENetPacket* packet){
     fprintf(stderr, "[Packet] ");
@@ -38,6 +39,12 @@ class chat_net : public Colleague {
         const ENetAddress address = {.host = ENET_HOST_ANY, .port = port};
         m_server = enet_host_create(&address, peer_max, ch, 0, 0);
         m_client_id_usage.resize(peer_max);
+    }
+
+    ~chat_net(){
+        if(m_server != NULL){
+            enet_host_destroy(m_server);
+        }
     }
 
     const bool is_valied() noexcept{
@@ -149,6 +156,33 @@ class chat_net : public Colleague {
     std::vector<uint8_t> m_last_recived;
     NetEvent m_last_event;
     ClientID m_last_from;
+};
+
+class server_system : public Meditator, private boost::noncopyable {
+    public:
+    server_system() noexcept
+    :m_net(nullptr){
+        create_colleagues();
+    }
+
+    ~server_system(){
+        m_net = nullptr;
+    }
+
+    void colleague_change(Colleague* colleague) noexcept override{
+        //ここを埋める
+        //入力の反映方法を探る
+        if(m_net.get() == colleague){
+        }
+    }
+
+    void create_colleagues() noexcept override{
+        m_net = std::make_unique<chat_net>(PORT, 128, 2);
+        m_net->set_meditator(this);
+    };
+
+    private:
+    std::unique_ptr<chat_net> m_net;
 };
 
 int  main(int argc, char ** argv) {
