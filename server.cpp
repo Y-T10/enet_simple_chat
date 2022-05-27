@@ -53,6 +53,7 @@ class chat_user_namager : public Colleague {
         assert(user_id < m_user_list.size());
         assert(m_user_list[user_id] == std::nullopt);
         m_user_list[user_id] = info;
+        return true;
     }
 
     const std::optional<user_info> get_user_info(const ClientID user_id) noexcept{
@@ -262,6 +263,10 @@ class server_system : public Meditator, private boost::noncopyable {
         m_user = std::make_unique<chat_user_namager>();
         m_user->set_meditator(this);
     };
+
+    void update() noexcept{
+        m_net->update();
+    }
 
     private:
     std::unique_ptr<chat_net> m_net;
