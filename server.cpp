@@ -86,6 +86,14 @@ class chat_user_namager : public Colleague {
 };
 
 class chat_net : public Colleague {
+    const bool is_there_peer(const ENetPeer* target) noexcept{
+        for(size_t i = 0; i <m_server->peerCount; ++i){
+            if(m_server->peers + i == target){
+                return true;
+            }
+        }
+        return false;
+    }
     public:
 
     explicit chat_net(const enet_uint16 port, const size_t peer_max, const size_t ch) noexcept
@@ -120,7 +128,7 @@ class chat_net : public Colleague {
                 return;
             }
             //イベントを処理する
-            assert(any_of(m_server->peers, m_server->peers + m_server->peerCount, event.peer));
+            assert(is_there_peer(event.peer));
             assert(event.peer > m_server->peers);
             //最新の受信元IDを更新する
             m_last_from = static_cast<ClientID>(event.peer - m_server->peers);
@@ -250,7 +258,7 @@ class server_system : public Meditator, private boost::noncopyable {
     void create_colleagues() noexcept override{
         m_net = std::make_unique<chat_net>(PORT, 128, 2);
         m_net->set_meditator(this);
-        m_user = std::make_unique<chat_user_namager>(PORT, 128, 2);
+        m_user = std::make_unique<chat_user_namager>();
         m_user->set_meditator(this);
     };
 
