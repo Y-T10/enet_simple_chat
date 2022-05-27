@@ -199,28 +199,64 @@ class chat_net : public Colleague {
 class server_system : public Meditator, private boost::noncopyable {
     public:
     server_system() noexcept
-    :m_net(nullptr){
+    :m_net(nullptr)
+    ,m_user(nullptr){
         create_colleagues();
     }
 
     ~server_system(){
         m_net = nullptr;
+        m_user = nullptr;
     }
 
     void colleague_change(Colleague* colleague) noexcept override{
         //ここを埋める
         //入力の反映方法を探る
         if(m_net.get() == colleague){
+            if(m_net->last_event() == NetEvent::CONNECT){
+                m_user->add_new_user(m_net->last_from_client_id(), {.m_name = ""});
+                return;
+            }
+            if(m_net->last_event() == NetEvent::RECEIVE){
+                const auto info = m_user->get_user_info(m_net->last_from_client_id());
+                assert(info.has_value());
+                const auto recv = m_net->last_received_data();
+                if(info->m_name == ""){
+                    const user_info new_user = {
+                        .m_name = std::string(recv.begin(), recv.end() - 1)
+                    };
+                    m_user->replace_user_info(m_net->last_from_client_id(), new_user);
+                    const std::string join_message = new_user.m_name + " has connected\n";
+                    m_net->send_to_everyone(0, join_message);
+                    m_net->flush_send();
+                    return;
+                }
+                const std::string user_message = info->m_name + ": "+ std::string(recv.begin(), recv.end() - 1) +"\n";
+                m_net->send_to_everyone(0, user_message);
+                m_net->flush_send();
+                return;
+            }
+            if(m_net->last_event() == NetEvent::DISCONNECT){
+                const auto info = m_user->get_user_info(m_net->last_from_client_id());
+                m_user->remove_user_info(m_net->last_from_client_id());
+                assert(info.has_value());
+                const std::string disco_message = info->m_name + " has disconnected.\n";
+                m_net->send_to_everyone(0, disco_message);
+                m_net->flush_send();
+            }
         }
     }
 
     void create_colleagues() noexcept override{
         m_net = std::make_unique<chat_net>(PORT, 128, 2);
         m_net->set_meditator(this);
+        m_user = std::make_unique<chat_user_namager>(PORT, 128, 2);
+        m_user->set_meditator(this);
     };
 
     private:
     std::unique_ptr<chat_net> m_net;
+    std::unique_ptr<chat_user_namager> m_user;
 };
 
 int  main(int argc, char ** argv) {
