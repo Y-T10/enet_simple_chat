@@ -10,6 +10,7 @@
 #include<optional>
 #include<list>
 #include<thread>
+#include <boost/unordered_map.hpp>
 
 using namespace std;
 
@@ -39,52 +40,45 @@ struct user_info {
 class chat_user_namager : public Colleague {
     public:
     chat_user_namager() noexcept
-    :m_user_list(0){};
+    :m_user_list(){};
     ~chat_user_namager() noexcept{
     }
 
     const bool add_new_user(const ClientID user_id, const user_info& info) noexcept{
-        if(m_user_list.size() < user_id || m_user_list[user_id].has_value()){
+        if(m_user_list.contains(user_id)){
             return false;
         }
-        if(m_user_list.size() == user_id){
-            m_user_list.emplace_back(std::nullopt);
-        }
-        assert(user_id < m_user_list.size());
-        assert(m_user_list[user_id] == std::nullopt);
         m_user_list[user_id] = info;
         return true;
     }
 
     const std::optional<user_info> get_user_info(const ClientID user_id) noexcept{
-        if(m_user_list.size() > user_id){
-            return std::nullopt;
+        if(!m_user_list.contains(user_id)){
+            return nullopt;
         }
-        assert(m_user_list[user_id].has_value());
-        return m_user_list[user_id];
+        return std::optional<user_info>(m_user_list[user_id]);
     };
 
     void replace_user_info(const ClientID user_id, const user_info& info) noexcept{
-        if(m_user_list.size() <= user_id || !m_user_list[user_id].has_value()){
+        if(!m_user_list.contains(user_id)){
             return;
         }
         m_user_list[user_id] = info;
     };
 
     void remove_user_info(const ClientID user_id) noexcept{
-        if(m_user_list.size() > user_id){
+        if(m_user_list.contains(user_id)){
             return;
         }
-        m_user_list[user_id] = std::nullopt;
+        m_user_list.extract(m_user_list.find(user_id));
     };
 
     const size_t user_num() noexcept{
-        const auto is_null = [](const std::optional<user_info>& info){return info != std::nullopt;};
-        return ranges::count_if(m_user_list, is_null);
+        return m_user_list.size();
     }
 
     private:
-    std::vector<std::optional<user_info>> m_user_list;
+    boost::unordered_map<ClientID, user_info> m_user_list;
 };
 
 class chat_net : public Colleague {
