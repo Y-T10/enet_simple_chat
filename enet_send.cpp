@@ -36,3 +36,11 @@ const bool Broadcast_ENet_Packet(ENetHost* server, const size_t channel, const v
     enet_host_broadcast(server, channel, packet);
     return true;
 }
+
+const bool Broadcast_ENet_Packet(ENetHost* server, const size_t channel, const std::vector<uint8_t>& data, const bool is_reliable){
+    return Broadcast_ENet_Packet(server, channel, data.data(), data.size(), is_reliable);
+}
+
+const bool Broadcast_ENet_Packet(ENetHost* server, const size_t channel, const std::string& str, const bool is_reliable){
+    return Broadcast_ENet_Packet(server, channel, str.c_str(), str.size() + 1, is_reliable);
+}

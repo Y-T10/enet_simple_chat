@@ -28,3 +28,5 @@ const bool Send_ENet_Packet(ENetPeer* dst, const size_t channel, const std::stri
  * @return 送信の成否
  */
 const bool Broadcast_ENet_Packet(ENetHost* server, const size_t channel, const void* data, const size_t data_size, const bool is_reliable);
+const bool Broadcast_ENet_Packet(ENetHost* server, const size_t channel, const std::vector<uint8_t>& data, const bool is_reliable);
+const bool Broadcast_ENet_Packet(ENetHost* server, const size_t channel, const std::string& str, const bool is_reliable);
