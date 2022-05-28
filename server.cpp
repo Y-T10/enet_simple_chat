@@ -67,7 +67,7 @@ class chat_user_namager : public Colleague {
     };
 
     void remove_user_info(const ClientID user_id) noexcept{
-        if(m_user_list.contains(user_id)){
+        if(!m_user_list.contains(user_id)){
             return;
         }
         m_user_list.extract(m_user_list.find(user_id));
