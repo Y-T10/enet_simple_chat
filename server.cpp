@@ -125,7 +125,6 @@ class chat_net : public Colleague {
             }
             //イベントを処理する
             assert(is_there_peer(event.peer));
-            assert(event.peer > m_server->peers);
             //最新の受信元IDを更新する
             m_last_from = static_cast<ClientID>(event.peer - m_server->peers);
             if(event.type == ENET_EVENT_TYPE_CONNECT){
