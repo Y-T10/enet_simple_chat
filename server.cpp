@@ -11,6 +11,7 @@
 #include<list>
 #include<thread>
 #include <boost/unordered_map.hpp>
+#include<iostream>
 
 using namespace std;
 
@@ -232,11 +233,21 @@ class server_system : public Meditator, private boost::noncopyable {
                     const std::string join_message = new_user.m_name + " has connected\n";
                     m_net->send_to_everyone(0, join_message);
                     m_net->flush_send();
+                    std::cerr   << "[connection]"
+                                << " user: " << new_user.m_name
+                                << " id: " << m_net->last_from_client_id()
+                                << std::endl;
                     return;
                 }
-                const std::string user_message = info->m_name + ": "+ std::string(recv.begin(), recv.end() - 1) +"\n";
+                const auto msg = std::string(recv.begin(), recv.end() - 1);
+                const std::string user_message = info->m_name + ": "+ msg +"\n";
                 m_net->send_to_everyone(0, user_message);
                 m_net->flush_send();
+                std::cerr   << "[message]"
+                    << " user: " << info->m_name
+                    << " id: " << m_net->last_from_client_id()
+                    << " message: " << msg
+                    << std::endl;
                 return;
             }
             if(m_net->last_event() == NetEvent::DISCONNECT){
@@ -246,6 +257,11 @@ class server_system : public Meditator, private boost::noncopyable {
                 const std::string disco_message = info->m_name + " has disconnected.\n";
                 m_net->send_to_everyone(0, disco_message);
                 m_net->flush_send();
+                std::cerr   << "[disconnect]"
+                            << " user: " << info->m_name
+                            << " id: " << m_net->last_from_client_id()
+                            << std::endl;
+                return;
             }
         }
     }
@@ -268,8 +284,8 @@ class server_system : public Meditator, private boost::noncopyable {
 
 int  main(int argc, char ** argv) {
     if(enet_initialize() != 0) {
-      printf("Could not initialize enet.");
-      return 0;
+        fprintf(stderr, "Could not initialize enet.\n");
+        return 0;
     }
 
     auto m_server_sys = std::make_unique<server_system>();
