@@ -1,7 +1,20 @@
+ENET_FLAGS:=$$(pkgconf --cflags libenet)
+ENET_LDLIBS:=$$(pkgconf --libs libenet)
+CXXFLAGS:=-Wall -std=c++20 $(ENET_FLAGS)
+LDLIBS:=-lpthread $(ENET_LDLIBS)
+
 all: server client
 
-server: server.cpp
-	g++ -Wall $$(pkgconf --cflags libenet) -o $@ $^ $$(pkgconf --libs libenet)
+server: server.o enet_send.o
+	g++ $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
-client: client.cpp
-	g++ -Wall $$(pkgconf --cflags libenet) -o $@ $^ $$(pkgconf --libs libenet)
+client: client.o enet_send.o
+	g++ $(CXXFLAGS) -o $@ $^ $(LDLIBS)
+
+%.o: %.cpp
+	g++ $(CXXFLAGS) -Wall -c $^ $(LDLIBS)
+
+clean:
+	-@rm *.o
+	-@rm server.exe
+	-@rm client.exe

@@ -2,6 +2,10 @@
 client
 server
 *.exe
+*.o
 
 # エディタ固有のデータを除外
 .vscode/
+
+#ゴミ箱を追加
+.trash/
