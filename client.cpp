@@ -116,13 +116,10 @@ class chat_communication : public Colleague{
         assert(event.type != ENET_EVENT_TYPE_CONNECT);
         m_last_event = event.type;
         if(event.type == ENET_EVENT_TYPE_RECEIVE){
-            const auto recv_vector = std::vector<uint8_t>(
+            m_last_recived = std::vector<uint8_t>(
                 event.packet->data,
                 event.packet->data + event.packet->dataLength
             );
-            m_last_recived.clear();
-            m_last_recived.reserve(recv_vector.size());
-            std::copy(recv_vector.begin(), recv_vector.end(), std::back_inserter(m_last_recived));
             enet_packet_destroy(event.packet);
             notify_change();
             return;
