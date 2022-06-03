@@ -134,14 +134,14 @@ class chat_communication : public Colleague{
         }
     }
 
-    const bool add_sent_data(const std::vector<uint8_t>& data, const size_t ch) noexcept{
+    const bool add_send_data(const std::vector<uint8_t>& data, const size_t ch) noexcept{
         if(!this->isVailed() || !this->isConnected()){
             return false;
         }
         return Send_ENet_Packet(m_server_peer, ch, data, true);
     }
 
-    const bool add_sent_data(const std::string& str, const size_t ch) noexcept{
+    const bool add_send_data(const std::string& str, const size_t ch) noexcept{
         if(!this->isVailed() || !this->isConnected()){
             return false;
         }
@@ -221,7 +221,7 @@ class chat_system : public Meditator , private boost::noncopyable {
                 m_communicate->requestDisconnection();
                 return;
             }
-            m_communicate->add_sent_data(msg, 0);
+            m_communicate->add_send_data(msg, 0);
             m_communicate->flush();
             return;
         }
@@ -230,7 +230,7 @@ class chat_system : public Meditator , private boost::noncopyable {
             const auto event = m_communicate->lastEvent();
             if(event == ENET_EVENT_TYPE_CONNECT){
                 assert(m_communicate->isConnected());
-                m_communicate->add_sent_data(m_username, 0);
+                m_communicate->add_send_data(m_username, 0);
                 m_communicate->flush();;
                 return;
             }
