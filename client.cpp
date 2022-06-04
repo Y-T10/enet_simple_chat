@@ -11,7 +11,8 @@
 #include "enet_send.hpp"
 
 #include"meditator.hpp"
-#include <unistd.h>
+#include<unistd.h>
+#include<msgpack.hpp>
 
 void PrintPacket(const ENetPacket* packet){
     fprintf(stderr, "[Packet] ");
@@ -116,13 +117,10 @@ class chat_communication : public Colleague{
         assert(event.type != ENET_EVENT_TYPE_CONNECT);
         m_last_event = event.type;
         if(event.type == ENET_EVENT_TYPE_RECEIVE){
-            const auto recv_vector = std::vector<uint8_t>(
+            m_last_recived = std::vector<uint8_t>(
                 event.packet->data,
                 event.packet->data + event.packet->dataLength
             );
-            m_last_recived.clear();
-            m_last_recived.reserve(recv_vector.size());
-            std::copy(recv_vector.begin(), recv_vector.end(), std::back_inserter(m_last_recived));
             enet_packet_destroy(event.packet);
             notify_change();
             return;
@@ -137,18 +135,14 @@ class chat_communication : public Colleague{
         }
     }
 
-    const bool add_sent_data(const std::vector<uint8_t>& data, const size_t ch) noexcept{
+    template <typename T>
+    const bool add_send_data(const T& data, const size_t ch) noexcept{
         if(!this->isVailed() || !this->isConnected()){
             return false;
         }
-        return Send_ENet_Packet(m_server_peer, ch, data, true);
-    }
-
-    const bool add_sent_data(const std::string& str, const size_t ch) noexcept{
-        if(!this->isVailed() || !this->isConnected()){
-            return false;
-        }
-        return Send_ENet_Packet(m_server_peer, ch, str, true);
+        msgpack::sbuffer send_buffer;
+        msgpack::pack(send_buffer, data);
+        return Send_ENet_Packet(m_server_peer, ch, send_buffer.data(), send_buffer.size(), true);
     }
 
     void flush() noexcept{
@@ -224,7 +218,7 @@ class chat_system : public Meditator , private boost::noncopyable {
                 m_communicate->requestDisconnection();
                 return;
             }
-            m_communicate->add_sent_data(msg, 0);
+            m_communicate->add_send_data(msg, 0);
             m_communicate->flush();
             return;
         }
@@ -233,14 +227,15 @@ class chat_system : public Meditator , private boost::noncopyable {
             const auto event = m_communicate->lastEvent();
             if(event == ENET_EVENT_TYPE_CONNECT){
                 assert(m_communicate->isConnected());
-                m_communicate->add_sent_data(m_username, 0);
+                m_communicate->add_send_data(m_username, 0);
                 m_communicate->flush();;
                 return;
             }
             if(event == ENET_EVENT_TYPE_RECEIVE){
                 assert(m_communicate->isConnected());
                 const auto recv_data = m_communicate->lastReceivedData();
-                m_io->add_message("Message: " + std::string(recv_data.begin(), recv_data.end()));
+                msgpack::object_handle result = msgpack::unpack((const char*)recv_data.data(), recv_data.size());
+                m_io->add_message("Message: " + result->as<std::string>());
                 return;
             }
             if(event == ENET_EVENT_TYPE_DISCONNECT){
