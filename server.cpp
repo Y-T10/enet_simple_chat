@@ -12,8 +12,10 @@
 #include<thread>
 #include <boost/unordered_map.hpp>
 #include<iostream>
+#include<msgpack.hpp>
 
 using namespace std;
+using namespace msgpack;
 
 void PrintPacket(const ENetPacket* packet){
     fprintf(stderr, "[Packet] ");
@@ -173,20 +175,22 @@ class chat_net : public Colleague {
         return m_server->peerCount;
     }
 
-    const bool send_to(const ClientID client_id, const size_t ch, const std::vector<uint8_t>& data) noexcept{
+    template <typename T>
+    const bool send_to(const ClientID client_id, const size_t ch, const T& data) noexcept{
         //対象のENetPeerを探す．
         if(client_id >= m_server->peerCount){
             return false;
         }
-        return Send_ENet_Packet(m_server->peers + client_id, ch, data, true);
+        msgpack::sbuffer send_buffer;
+        msgpack::pack(send_buffer, data);
+        return Send_ENet_Packet(m_server->peers + client_id, ch, send_buffer.data(), send_buffer.size(), true);
     }
 
-    const bool send_to_everyone(const size_t ch, const std::vector<uint8_t>& data) noexcept{
-        return Broadcast_ENet_Packet(m_server, ch, data.data(), data.size(), true);
-    }
-
-    const bool send_to_everyone(const size_t ch, const std::string& str) noexcept{
-        return Broadcast_ENet_Packet(m_server, ch, str, true);
+    template <typename T>
+    const bool send_to_everyone(const size_t ch, const T& data) noexcept{
+        msgpack::sbuffer send_buffer;
+        msgpack::pack(send_buffer, data);
+        return Broadcast_ENet_Packet(m_server, ch, send_buffer.data(), send_buffer.size(), true);
     }
 
     void flush_send() noexcept{
@@ -225,9 +229,10 @@ class server_system : public Meditator, private boost::noncopyable {
                 const auto info = m_user->get_user_info(m_net->last_from_client_id());
                 assert(info.has_value());
                 const auto recv = m_net->last_received_data();
+                object_handle result = unpack((const char*)recv.data(), recv.size());
                 if(info->m_name == ""){
                     const user_info new_user = {
-                        .m_name = std::string(recv.begin(), recv.end() - 1)
+                        .m_name = result.get().as<std::string>()
                     };
                     m_user->replace_user_info(m_net->last_from_client_id(), new_user);
                     const std::string join_message = new_user.m_name + " has connected\n";
@@ -239,7 +244,7 @@ class server_system : public Meditator, private boost::noncopyable {
                                 << std::endl;
                     return;
                 }
-                const auto msg = std::string(recv.begin(), recv.end() - 1);
+                const auto msg = result.get().as<std::string>();
                 const std::string user_message = info->m_name + ": "+ msg +"\n";
                 m_net->send_to_everyone(0, user_message);
                 m_net->flush_send();
