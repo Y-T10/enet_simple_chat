@@ -13,6 +13,8 @@
 #include <boost/unordered_map.hpp>
 #include<iostream>
 #include<msgpack.hpp>
+#include<csignal>
+#include<cerrno>
 
 using namespace std;
 using namespace msgpack;
@@ -203,6 +205,42 @@ class chat_net : public Colleague {
     NetEvent m_last_event;
     ClientID m_last_from;
 };
+
+class server_system_signal : public Colleague {
+    public:
+    server_deamon_system() noexcept;
+    ~server_deamon_system() = default;
+
+    void update() noexcept{
+        const sigset_t sigmask;
+        sigemptyset(&sigmask);
+        //シグナルマスクを設定する
+        //一部が良さそう
+        //最悪すべてのシグナルを受け取る．こうすると探索が大変だが、監視外のを知らせられる．
+        //どちらにすればよいかはよく考えること．
+        sigfillset(&sigmask);
+        const struct timespec wait_time = { .tv_sec = 0, .tv_nsec = 0 };
+        while(true){
+            const int signal_id = sigtimedwait(&sigmask, NULL, &wait_time);
+            if(signal_id > 0){
+                //シグナルを記録する
+                //シグナル受信を知らせる
+                notify_change();
+                continue;
+            }
+            const int last_error = errno;
+            assert(last_error != EINVAL);
+            //もうシグナルがないかを判断する
+            if(last_error == EAGAIN){
+                break;
+            }
+            //監視外のシグナルを受信したかを判断する
+            if(last_error == EINTR){
+                continue;
+            }
+        }
+    }
+}
 
 class server_system : public Meditator, private boost::noncopyable {
     public:
