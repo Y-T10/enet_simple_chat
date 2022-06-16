@@ -208,11 +208,15 @@ class chat_net : public Colleague {
 
 class server_system_signal : public Colleague {
     public:
-    server_deamon_system() noexcept;
-    ~server_deamon_system() = default;
+    server_system_signal() noexcept
+    :m_lastSignalID(0){
+        ///ここで動悸するシグナルのハンドラーを無効にする
+        ///ここでマスクも設定するのが良さそう
+    };
+    ~server_system_signal() = default;
 
     void update() noexcept{
-        const sigset_t sigmask;
+        sigset_t sigmask = { 0 };
         sigemptyset(&sigmask);
         //シグナルマスクを設定する
         //一部が良さそう
@@ -247,8 +251,8 @@ class server_system_signal : public Colleague {
     }
 
     private:
-    const int m_lastSignalID;
-}
+    int m_lastSignalID;
+};
 
 class server_system : public Meditator, private boost::noncopyable {
     public:
@@ -315,6 +319,14 @@ class server_system : public Meditator, private boost::noncopyable {
                 return;
             }
         }
+
+        //シグナルが発生したかを判断する
+        if(m_signal.get() == colleague){
+            std::cerr   << "[signal]"
+                        << " id: " << m_signal->lastSignal()
+                        << std::endl;
+            return;
+        }
     }
 
     void create_colleagues() noexcept override{
@@ -322,6 +334,8 @@ class server_system : public Meditator, private boost::noncopyable {
         m_net->set_meditator(this);
         m_user = std::make_unique<chat_user_namager>();
         m_user->set_meditator(this);
+        m_signal = std::make_unique<server_system_signal>();
+        m_signal->set_meditator(this);
     };
 
     void update() noexcept{
@@ -331,6 +345,7 @@ class server_system : public Meditator, private boost::noncopyable {
     private:
     std::unique_ptr<chat_net> m_net;
     std::unique_ptr<chat_user_namager> m_user;
+    std::unique_ptr<server_system_signal> m_signal;
 };
 
 int  main(int argc, char ** argv) {
