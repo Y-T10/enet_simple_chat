@@ -225,6 +225,7 @@ class server_system_signal : public Colleague {
             if(signal_id > 0){
                 //シグナルを記録する
                 //シグナル受信を知らせる
+                m_lastSignalID = signal_id;
                 notify_change();
                 continue;
             }
@@ -240,6 +241,13 @@ class server_system_signal : public Colleague {
             }
         }
     }
+
+    const int lastSignal() noexcept{
+        return m_lastSignalID;
+    }
+
+    private:
+    const int m_lastSignalID;
 }
 
 class server_system : public Meditator, private boost::noncopyable {
