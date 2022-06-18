@@ -208,6 +208,9 @@ class chat_net : public Colleague {
 
 class server_system_signal : public Colleague {
     public:
+    ///シグナル番号型
+    using SignalID = int;
+
     server_system_signal() noexcept
     :m_lastSignalID(0){
         ///ここで動悸するシグナルのハンドラーを無効にする
