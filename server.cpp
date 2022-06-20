@@ -273,7 +273,8 @@ class server_system : public Meditator, private boost::noncopyable {
     public:
     server_system() noexcept
     :m_net(nullptr)
-    ,m_user(nullptr){
+    ,m_user(nullptr)
+    ,m_isQuit(false){
         create_colleagues();
     }
 
@@ -343,6 +344,8 @@ class server_system : public Meditator, private boost::noncopyable {
             //終了シグナルを受信したか
             if(m_signal->lastSignal() == SIGTERM){
                 //プログラムを正しく終了する(ex. プログラム終了メッセージを発行する)
+                m_isQuit = true;
+                return;
             }
             return;
         }
@@ -362,10 +365,15 @@ class server_system : public Meditator, private boost::noncopyable {
         m_signal->update();
     }
 
+    const bool isQuit() noexcept{
+        return m_isQuit;
+    }
+
     private:
     std::unique_ptr<chat_net> m_net;
     std::unique_ptr<chat_user_namager> m_user;
     std::unique_ptr<server_system_signal> m_signal;
+    bool m_isQuit;
 };
 
 int  main(int argc, char ** argv) {
@@ -375,10 +383,11 @@ int  main(int argc, char ** argv) {
     }
 
     auto m_server_sys = std::make_unique<server_system>();
-    while(true){
+    while(!m_server_sys->isQuit()){
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         m_server_sys->update();
     }
+    m_server_sys = nullptr;
 
     enet_deinitialize();
 }
