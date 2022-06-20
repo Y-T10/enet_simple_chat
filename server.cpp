@@ -201,6 +201,12 @@ class chat_net : public Colleague {
         enet_host_flush(m_server);
     }
 
+    void disconnectAll() noexcept{
+        for(auto iPeer = m_server->peers; iPeer != m_server->peers + m_server->peerCount; ++iPeer){
+            enet_peer_disconnect(iPeer, 0);
+        }
+    };
+
     private:
     ENetHost *m_server;
     std::vector<uint8_t> m_last_recived;
@@ -344,6 +350,7 @@ class server_system : public Meditator, private boost::noncopyable {
             //終了シグナルを受信したか
             if(m_signal->lastSignal() == SIGTERM){
                 //プログラムを正しく終了する(ex. プログラム終了メッセージを発行する)
+                m_net->disconnectAll();
                 m_isQuit = true;
                 return;
             }
