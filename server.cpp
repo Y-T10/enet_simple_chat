@@ -13,6 +13,10 @@
 #include <boost/unordered_map.hpp>
 #include<iostream>
 #include<msgpack.hpp>
+#include<csignal>
+#include<cerrno>
+#include<initializer_list>
+#include<signal.h>
 
 using namespace std;
 using namespace msgpack;
@@ -197,6 +201,12 @@ class chat_net : public Colleague {
         enet_host_flush(m_server);
     }
 
+    void disconnectAll() noexcept{
+        for(auto iPeer = m_server->peers; iPeer != m_server->peers + m_server->peerCount; ++iPeer){
+            enet_peer_disconnect(iPeer, 0);
+        }
+    };
+
     private:
     ENetHost *m_server;
     std::vector<uint8_t> m_last_recived;
@@ -204,11 +214,73 @@ class chat_net : public Colleague {
     ClientID m_last_from;
 };
 
+class server_system_signal : public Colleague {
+    public:
+
+    server_system_signal(const std::initializer_list<int> recvSingals) noexcept
+    :m_lastSignalID(0)
+    ,m_sigMask(){
+        //シグナルのマスクを初期化する
+        sigemptyset(&m_sigMask);
+        //シグナルの設定
+        for(auto &&iID: recvSingals){
+            if(iID == SIGKILL || iID == SIGSTOP){
+                continue;
+            }
+            //シグナル番号は1以上が有効で0以下は無効
+            assert(iID > 0);
+            //シグナルマスクを設定する
+            sigaddset(&m_sigMask, iID);
+        }
+        //シグナルハンドラーを無効にする
+        ///sigtimedwaitでシグナルを受信するには、指定のシグナルをシグナルハンドラーに送らないようにする．
+        sigprocmask(SIG_BLOCK, &m_sigMask, NULL);
+    };
+    ~server_system_signal() = default;
+
+    void update() noexcept{
+        //すぐ返す
+        const struct timespec wait_time = { .tv_sec = 0, .tv_nsec = 0 };
+        while(true){
+            //シグナルを取り出す
+            const int signal_id = sigtimedwait(&m_sigMask, NULL, &wait_time);
+            //シグナルがあるか
+            if(signal_id > 0){
+                //シグナルを記録する
+                //シグナル受信を知らせる
+                m_lastSignalID = signal_id;
+                notify_change();
+                continue;
+            }
+            //エラー番号を取り出す
+            const int last_error = errno;
+            assert(last_error != EINVAL);
+            //もうシグナルがないかを判断する
+            if(last_error == EAGAIN){
+                return;
+            }
+            //監視外のシグナルを受信したかを判断する
+            if(last_error == EINTR){
+                continue;
+            }
+        }
+    }
+
+    const int lastSignal() noexcept{
+        return m_lastSignalID;
+    }
+
+    private:
+    int m_lastSignalID;
+    sigset_t m_sigMask;
+};
+
 class server_system : public Meditator, private boost::noncopyable {
     public:
     server_system() noexcept
     :m_net(nullptr)
-    ,m_user(nullptr){
+    ,m_user(nullptr)
+    ,m_isQuit(false){
         create_colleagues();
     }
 
@@ -269,6 +341,21 @@ class server_system : public Meditator, private boost::noncopyable {
                 return;
             }
         }
+
+        //シグナルが発生したかを判断する
+        if(m_signal.get() == colleague){
+            std::cerr   << "[signal]"
+                        << " id: " << m_signal->lastSignal()
+                        << std::endl;
+            //終了シグナルを受信したか
+            if(m_signal->lastSignal() == SIGTERM){
+                //プログラムを正しく終了する(ex. プログラム終了メッセージを発行する)
+                m_net->disconnectAll();
+                m_isQuit = true;
+                return;
+            }
+            return;
+        }
     }
 
     void create_colleagues() noexcept override{
@@ -276,15 +363,24 @@ class server_system : public Meditator, private boost::noncopyable {
         m_net->set_meditator(this);
         m_user = std::make_unique<chat_user_namager>();
         m_user->set_meditator(this);
+        m_signal = std::make_unique<server_system_signal, std::initializer_list<int>>({SIGHUP, SIGTERM});
+        m_signal->set_meditator(this);
     };
 
     void update() noexcept{
         m_net->update();
+        m_signal->update();
+    }
+
+    const bool isQuit() noexcept{
+        return m_isQuit;
     }
 
     private:
     std::unique_ptr<chat_net> m_net;
     std::unique_ptr<chat_user_namager> m_user;
+    std::unique_ptr<server_system_signal> m_signal;
+    bool m_isQuit;
 };
 
 int  main(int argc, char ** argv) {
@@ -294,10 +390,11 @@ int  main(int argc, char ** argv) {
     }
 
     auto m_server_sys = std::make_unique<server_system>();
-    while(true){
+    while(!m_server_sys->isQuit()){
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         m_server_sys->update();
     }
+    m_server_sys = nullptr;
 
     enet_deinitialize();
 }
