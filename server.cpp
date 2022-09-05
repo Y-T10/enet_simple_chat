@@ -21,15 +21,6 @@
 using namespace std;
 using namespace msgpack;
 
-void PrintPacket(const ENetPacket* packet){
-    fprintf(stderr, "[Packet] ");
-    fprintf(stderr, "data: ");
-    for(size_t i = 0; i < packet->dataLength; ++i){
-        fprintf(stderr, "%x ", packet->data[i]);
-    }
-    fprintf(stderr, "\n");
-}
-
 enum NetEvent : uint8_t {
     NONE = 0, 
     CONNECT,
