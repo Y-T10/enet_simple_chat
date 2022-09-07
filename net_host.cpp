@@ -78,6 +78,14 @@ void NetHost::broadcast(const size_t ch, ENetPacket* packet){
     enet_host_broadcast(m_host, ch, packet);
 }
 
-void NetHost::flust(){
+void NetHost::flush(){
     enet_host_flush(m_host);
+}
+
+void NetHost::close_all(){
+    const auto begin = m_host->peers;
+    const auto end   = m_host->peers + m_host->peerCount;
+    std::for_each(begin, end, [](ENetPeer* p){
+        enet_peer_disconnect(p, 0);
+    });
 }
