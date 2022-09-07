@@ -78,7 +78,10 @@ class NetHost {
     void broadcast(const size_t ch, ENetPacket* packet);
 
     ///データを実際に送る
-    void flust();
+    void flush();
+
+    ///全接続を切る
+    void close_all();
 
     private:
     /// @brief 接続先とやり取りするホスト
