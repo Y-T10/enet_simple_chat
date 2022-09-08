@@ -1,5 +1,3 @@
-#pragma once
-
 #include"net_host.hpp"
 #include<cassert>
 #include<optional>
@@ -43,11 +41,13 @@ const std::function<const bool(const ENetPeer*)>& finder){
     assert(host);
     const auto begin = host->peers;
     const auto end   = host->peers + host->peerCount;
-    const auto target = std::find_if(begin, end, finder);
-    if(target == end){
-        return std::nullopt;
+    for(auto p = begin; p != end; ++p){
+        if(finder(p)){
+            return p;
+        }
+        enet_peer_disconnect(p, 0);
     }
-    return target;
+    return std::nullopt;
 }
 
 const bool NetHost::is_there_peer(const std::function<const bool(const ENetPeer*)>& finder){
@@ -88,7 +88,7 @@ void NetHost::flush(){
 void NetHost::close_all(){
     const auto begin = m_host->peers;
     const auto end   = m_host->peers + m_host->peerCount;
-    std::for_each(begin, end, [](ENetPeer* p){
+    for(auto p = begin; p != end; ++p){
         enet_peer_disconnect(p, 0);
-    });
+    }
 }
