@@ -1,5 +1,6 @@
 #include"config.hpp"
 #include"net_host.hpp"
+#include"SigEvent.hpp"
 #include<algorithm>
 #include<memory>
 #include<optional>
@@ -7,10 +8,6 @@
 #include<boost/unordered_map.hpp>
 #include<iostream>
 #include<msgpack.hpp>
-#include<csignal>
-#include<cerrno>
-#include<initializer_list>
-#include<signal.h>
 
 using namespace std;
 using namespace msgpack;
@@ -19,56 +16,6 @@ using ClientID = uintptr_t;
 
 struct user_info {
     string m_name;
-};
-
-class SigEvent : private boost::noncopyable {
-    public:
-
-    SigEvent() noexcept
-    :m_sigMask(){};
-
-    ~SigEvent() = default;
-
-    const bool set_signal(const std::vector<int>& sigs){
-        //シグナルのマスクを初期化する
-        sigemptyset(&m_sigMask);
-        const auto func = [this](const int sig){
-            assert(sig > 0);
-            if(sig == SIGKILL || sig == SIGSTOP){
-                return;
-            }
-            sigaddset(&m_sigMask, sig);
-        };
-        //シグナルを設定する
-        std::ranges::for_each(sigs, func);
-        //指定したシグナルの関数が呼ばれないようにする
-        return sigprocmask(SIG_BLOCK, &m_sigMask, NULL) != -1;
-    }
-
-    void handle_signal(const std::function<void(const int)>& handler){
-        //すぐ返す
-        constexpr struct timespec wait_time = { .tv_sec = 0, .tv_nsec = 0 };
-
-        //シグナルを取り出す
-        while(true){
-            const int signal = sigtimedwait(&m_sigMask, NULL, &wait_time);
-            //監視対象のシグナルがあるか
-            if(signal > 0){
-                handler(signal);
-                return;
-            }
-            //エラー番号を取り出す
-            const int last_error = errno;
-            assert(last_error != EINVAL);
-            //もうシグナルがないかを判断する
-            if(last_error == EAGAIN){
-                return;
-            }
-        }
-    }
-
-    private:
-    sigset_t m_sigMask;
 };
 
 class server_system : private boost::noncopyable {
