@@ -69,7 +69,7 @@ class NetHost {
     ///ホストのイベントを処理する
     ///@param event_handler イベントを処理する関数
     ///@return イベント処理の結果
-    const bool handle_host_event(const std::function<const bool(const ENetEvent*)>& event_handler);
+    const bool handle_host_event(const std::function<void(const ENetEvent*)>& event_handler);
 
     /// @brief 全接続先にパケットを送る
     /// @param ch 送信チャンネル
