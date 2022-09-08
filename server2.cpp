@@ -83,8 +83,7 @@ class SigEvent : private boost::noncopyable {
     public:
 
     SigEvent() noexcept
-    :m_lastSignalID(0)
-    ,m_sigMask(){};
+    :m_sigMask(){};
 
     ~SigEvent() = default;
 
@@ -120,7 +119,6 @@ class SigEvent : private boost::noncopyable {
     }
 
     private:
-    int m_lastSignalID;
     sigset_t m_sigMask;
 };
 
