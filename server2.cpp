@@ -1,10 +1,4 @@
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
-#include<enet/enet.h>
 #include"config.hpp"
-#include"enet_send.hpp"
-#include"meditator.hpp"
 #include"net_host.hpp"
 #include<algorithm>
 #include<memory>
@@ -20,14 +14,6 @@
 
 using namespace std;
 using namespace msgpack;
-
-enum NetEvent : uint8_t {
-    NONE = 0, 
-    CONNECT,
-    DISCONNECT,
-    RECEIVE,
-    REFUSE,         ///接続拒否
-};
 
 using ClientID = uintptr_t;
 
