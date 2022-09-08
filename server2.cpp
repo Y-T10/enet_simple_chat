@@ -271,13 +271,12 @@ class server_system : private boost::noncopyable {
 
     void update() noexcept{
         //シグナルを調べる
-        m_sig->handle_signal([this](const int sig){
-            this->on_singnal(sig);
-        });
+        using namespace std::placeholders;
+        const auto sig_handler = std::bind(&server_system::on_singnal, this, _1);
+        m_sig->handle_signal(sig_handler);
         //ネットワークのイベントを処理する
-        m_net->handle_host_event([this](const ENetEvent* e) -> const bool{
-            this->on_net(e);
-        });
+        const auto net_handler = std::bind(&server_system::on_net, this, _1);
+        m_net->handle_host_event(net_handler);
     }
 
     const bool isQuit() noexcept{
