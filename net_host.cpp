@@ -63,14 +63,16 @@ const std::function<void(ENetPeer*)>& peer_handler){
     }
 }
 
-const bool NetHost::handle_host_event(const std::function<const bool(const ENetEvent*)>& event_handler){
+const bool NetHost::handle_host_event(const std::function<void(const ENetEvent*)>& event_handler){
     assert(*this);
     //エラーが生じるまでイベントを処理する
-    ENetEvent e;
-    if(enet_host_check_events(m_host, &e) < 0){
-        return false;
+    for(ENetEvent e; enet_host_check_events(m_host, &e) < 0;){
+        event_handler(&e);
+        if(e.type == ENET_EVENT_TYPE_NONE){
+            return true;
+        }
     }
-    return event_handler(&e);
+    return false;
 }
 
 void NetHost::broadcast(const size_t ch, ENetPacket* packet){

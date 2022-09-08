@@ -119,8 +119,11 @@ class server_system : private boost::noncopyable {
     }
 
     private:
-    const bool on_net(const ENetEvent* e){
-        const auto on_connect = [this](const ENetEvent* e) -> const bool{
+    void on_net(const ENetEvent* e){
+        if(e->type == ENET_EVENT_TYPE_NONE){
+            return;
+        }
+        const auto on_connect = [this](const ENetEvent* e){
             const ClientID new_id = e->data;
             e->peer->data = (void*)new_id;
             const user_info new_user = {.m_name = ""};
@@ -128,13 +131,12 @@ class server_system : private boost::noncopyable {
             std::cerr << "[connection]"
                       << " id: "   << new_id
                       << std::endl;
-            return true;
         };
         if(e->type == ENET_EVENT_TYPE_CONNECT){
-            return on_connect(e);
+            on_connect(e);
         }
         const ClientID id = (uintptr_t)(e->peer->data);
-        const auto on_recv = [this,&id](const ENetEvent* e) -> const bool{
+        const auto on_recv = [this,&id](const ENetEvent* e){
             const ClientID id = (uintptr_t)(e->peer->data);
             object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
             const auto msg = result.get().as<std::string>();
@@ -147,12 +149,11 @@ class server_system : private boost::noncopyable {
                 ENET_PACKET_FLAG_RELIABLE);
             m_net->broadcast(0, packet);
             m_net->flush();
-            return true;
         };
         if(e->type == ENET_EVENT_TYPE_RECEIVE){
-            return on_recv(e);
+            on_recv(e);
         }
-        const auto on_disconnect = [this,&id](const ENetEvent* e) -> const bool{
+        const auto on_disconnect = [this,&id](const ENetEvent* e){
             const std::string disco_message = m_user[id].m_name + " has disconnected.\n";
             std::cerr   << "[disconnect]"
                         << " user: " << m_user[id].m_name
@@ -164,12 +165,10 @@ class server_system : private boost::noncopyable {
             m_net->broadcast(0, packet);
             m_net->flush();
             m_user.erase(m_user.find(id));
-            return true;
         };
         if(e->type == ENET_EVENT_TYPE_DISCONNECT){
-            return on_disconnect(e);
+            on_disconnect(e);
         }
-        return false;
     };
 
     void on_singnal(const int sig){
