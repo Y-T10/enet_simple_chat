@@ -79,7 +79,7 @@ class chat_user_namager : public Colleague {
     boost::unordered_map<ClientID, user_info> m_user_list;
 };
 
-class SigEvent : public Colleague {
+class SigEvent : private boost::noncopyable {
     public:
 
     SigEvent() noexcept
