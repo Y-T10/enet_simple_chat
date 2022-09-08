@@ -46,31 +46,38 @@ class SigEvent : private boost::noncopyable {
     const bool set_signal(const std::vector<int>& sigs){
         //シグナルのマスクを初期化する
         sigemptyset(&m_sigMask);
-        //シグナルの設定
-        for(auto &&iSig: sigs){
-            if(iSig == SIGKILL || iSig == SIGSTOP){
-                continue;
+        const auto func = [this](const int sig){
+            assert(sig > 0);
+            if(sig == SIGKILL || sig == SIGSTOP){
+                return;
             }
-            //シグナル番号は1以上が有効で0以下は無効
-            assert(iSig > 0);
-            //シグナルマスクを設定する
-            sigaddset(&m_sigMask, iSig);
-        }
-        //シグナルハンドラーを無効にする
-        //sigtimedwaitでシグナルを受信するには、
-        //指定のシグナルをシグナルハンドラーに送らないようにする．
-        sigprocmask(SIG_BLOCK, &m_sigMask, NULL);
+            sigaddset(&m_sigMask, sig);
+        };
+        //シグナルを設定する
+        std::ranges::for_each(sigs, func);
+        //指定したシグナルの関数が呼ばれないようにする
+        return sigprocmask(SIG_BLOCK, &m_sigMask, NULL) != -1;
     }
 
     void handle_signal(const std::function<void(const int)>& handler){
         //すぐ返す
         constexpr struct timespec wait_time = { .tv_sec = 0, .tv_nsec = 0 };
+
         //シグナルを取り出す
-        const int signal = sigtimedwait(&m_sigMask, NULL, &wait_time);
-        //監視対象のシグナルがあるか
-        if(signal > 0){
-            handler(signal);
-            return;
+        while(true){
+            const int signal = sigtimedwait(&m_sigMask, NULL, &wait_time);
+            //監視対象のシグナルがあるか
+            if(signal > 0){
+                handler(signal);
+                return;
+            }
+            //エラー番号を取り出す
+            const int last_error = errno;
+            assert(last_error != EINVAL);
+            //もうシグナルがないかを判断する
+            if(last_error == EAGAIN){
+                return;
+            }
         }
     }
 
