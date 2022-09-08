@@ -2,6 +2,7 @@
 
 #include"net_host.hpp"
 #include<cassert>
+#include<optional>
 
 NetHost::NetHost():
 m_host(nullptr){};
