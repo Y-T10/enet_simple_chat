@@ -35,50 +35,6 @@ struct user_info {
     string m_name;
 };
 
-class chat_user_namager : public Colleague {
-    public:
-    chat_user_namager() noexcept
-    :m_user_list(){};
-    ~chat_user_namager() noexcept{
-    }
-
-    const bool add_new_user(const ClientID user_id, const user_info& info) noexcept{
-        if(m_user_list.contains(user_id)){
-            return false;
-        }
-        m_user_list[user_id] = info;
-        return true;
-    }
-
-    const std::optional<user_info> get_user_info(const ClientID user_id) noexcept{
-        if(!m_user_list.contains(user_id)){
-            return nullopt;
-        }
-        return std::optional<user_info>(m_user_list[user_id]);
-    };
-
-    void replace_user_info(const ClientID user_id, const user_info& info) noexcept{
-        if(!m_user_list.contains(user_id)){
-            return;
-        }
-        m_user_list[user_id] = info;
-    };
-
-    void remove_user_info(const ClientID user_id) noexcept{
-        if(!m_user_list.contains(user_id)){
-            return;
-        }
-        m_user_list.extract(m_user_list.find(user_id));
-    };
-
-    const size_t user_num() noexcept{
-        return m_user_list.size();
-    }
-
-    private:
-    boost::unordered_map<ClientID, user_info> m_user_list;
-};
-
 class SigEvent : private boost::noncopyable {
     public:
 
