@@ -5,7 +5,6 @@
 #include<vector>
 #include<tuple>
 #include<boost/noncopyable.hpp>
-#include<optional>
 #include<functional>
 
 using RecvData = std::vector<uint8_t>;

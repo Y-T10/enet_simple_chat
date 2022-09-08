@@ -3,7 +3,6 @@
 #include"SigEvent.hpp"
 #include<algorithm>
 #include<memory>
-#include<optional>
 #include<thread>
 #include<boost/unordered_map.hpp>
 #include<iostream>
