@@ -5,7 +5,7 @@ LDLIBS:=-lpthread $(ENET_LDLIBS)
 
 all: server client
 
-server: server.o enet_send.o
+server: server2.o net_host.o SigEvent.o
 	g++ $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 client: client.o enet_send.o
