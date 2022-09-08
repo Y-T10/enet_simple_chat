@@ -138,7 +138,7 @@ class server_system : private boost::noncopyable {
         m_net->set_host({128, 2, 0, 0, {.host = ENET_HOST_ANY, .port = PORT}});
         m_sig = std::make_unique<SigEvent>();
         m_sig->set_signal({SIGHUP, SIGTERM});
-        m_user = std::make_unique<chat_user_namager>();
+        m_user.clear();
     };
 
     void update() noexcept{
@@ -158,72 +158,53 @@ class server_system : private boost::noncopyable {
     private:
     const bool on_net(const ENetEvent* e){
         const auto on_connect = [this](const ENetEvent* e) -> const bool{
-            const ClientID new_id = (uintptr_t)(e->data);
+            const ClientID new_id = e->data;
             e->peer->data = (void*)new_id;
-            m_user->add_new_user(new_id, {.m_name = ""});
-            return true;
-        };
-        const auto on_recv = [this](const ENetEvent* e, const ClientID id) -> const bool{
-            const ClientID id = (uintptr_t)(e->peer->data);
-            const auto info = m_user->get_user_info(id);
-            assert(info.has_value());
-            object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
-            const auto msg = result.get().as<std::string>();
-            if(info->m_name == ""){
-                const user_info new_user = {
-                    .m_name = msg
-                };
-                m_user->replace_user_info(id, new_user);
-                const std::string join_message = new_user.m_name + " has connected\n";
-                ENetPacket* packet = enet_packet_create(
-                    join_message.data(), join_message.size(),
-                    ENET_PACKET_FLAG_RELIABLE);
-                m_net->broadcast(0, packet);
-                m_net->flush();
-                std::cerr   << "[connection]"
-                            << " user: " << new_user.m_name
-                            << " id: " << id
-                            << std::endl;
-                return true;
-            }
-            const std::string user_message = info->m_name + ": "+ msg +"\n";
-            ENetPacket* packet = enet_packet_create(
-                    user_message.data(), user_message.size(),
-                    ENET_PACKET_FLAG_RELIABLE);
-            m_net->broadcast(0, packet);
-            m_net->flush();
-            std::cerr   << "[message]"
-                << " user: " << info->m_name
-                << " id: " << id
-                << " message: " << msg
-                << std::endl;
-            return true;
-        };
-        const auto on_disconnect = [this](const ENetEvent* e, const ClientID id) -> const bool{
-            const auto info = m_user->get_user_info(id);
-            m_user->remove_user_info(id);
-            assert(info.has_value());
-            const std::string disco_message = info->m_name + " has disconnected.\n";
-            ENetPacket* packet = enet_packet_create(
-                    disco_message.data(), disco_message.size(),
-                    ENET_PACKET_FLAG_RELIABLE);
-            m_net->broadcast(0, packet);
-            m_net->flush();
-            std::cerr   << "[disconnect]"
-                        << " user: " << info->m_name
-                        << " id: " << id
-                        << std::endl;
+            const user_info new_user = {.m_name = ""};
+            m_user.emplace(new_id, new_user);
+            std::cerr << "[connection]"
+                      << " id: "   << new_id
+                      << std::endl;
             return true;
         };
         if(e->type == ENET_EVENT_TYPE_CONNECT){
             return on_connect(e);
         }
         const ClientID id = (uintptr_t)(e->peer->data);
+        const auto on_recv = [this,&id](const ENetEvent* e) -> const bool{
+            const ClientID id = (uintptr_t)(e->peer->data);
+            object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
+            const auto msg = result.get().as<std::string>();
+            if(m_user[id].m_name == ""){
+                m_user[id].m_name = msg;
+            }
+            const std::string user_message = m_user[id].m_name + ": "+ msg +"\n";
+            ENetPacket* packet = enet_packet_create(
+                user_message.data(), user_message.size(),
+                ENET_PACKET_FLAG_RELIABLE);
+            m_net->broadcast(0, packet);
+            m_net->flush();
+            return true;
+        };
         if(e->type == ENET_EVENT_TYPE_RECEIVE){
-            return on_recv(e, id);
+            return on_recv(e);
         }
+        const auto on_disconnect = [this,&id](const ENetEvent* e) -> const bool{
+            const std::string disco_message = m_user[id].m_name + " has disconnected.\n";
+            std::cerr   << "[disconnect]"
+                        << " user: " << m_user[id].m_name
+                        << " id: " << id
+                        << std::endl;
+            ENetPacket* packet = enet_packet_create(
+                    disco_message.data(), disco_message.size(),
+                    ENET_PACKET_FLAG_RELIABLE);
+            m_net->broadcast(0, packet);
+            m_net->flush();
+            m_user.erase(m_user.find(id));
+            return true;
+        };
         if(e->type == ENET_EVENT_TYPE_DISCONNECT){
-            return on_disconnect(e, id);
+            return on_disconnect(e);
         }
         return false;
     };
@@ -243,7 +224,7 @@ class server_system : private boost::noncopyable {
     private:
     std::unique_ptr<NetHost> m_net;
     std::unique_ptr<SigEvent> m_sig;
-    std::unique_ptr<chat_user_namager> m_user;
+    boost::unordered_map<ClientID, user_info> m_user;
     bool m_isQuit;
 };
 
