@@ -25,13 +25,13 @@ struct HostSetting {
     ENetAddress* address;
 };
 
-class basic_enet {
+class basic_enet : private boost::noncopyable {
     public:
     /// @brief 既定のコンストラクタ
     basic_enet();
 
     /// @brief デストラクタ
-    ~basic_enet();
+    virtual ~basic_enet();
 
     ///状態確認用演算子
     ///@return エラーの有無を返す
@@ -70,19 +70,13 @@ class basic_enet {
     ///@return イベント処理の結果
     const bool handle_host_event(const std::function<void(const ENetEvent*)>& event_handler);
 
-    /// @brief 全接続先にパケットを送る
-    /// @param ch 送信チャンネル
-    /// @param data 送信パケット
-    /// @return 送信結果
-    void broadcast(const size_t ch, ENetPacket* packet);
-
     ///データを実際に送る
     void flush();
 
     ///全接続を切る
     void close_all();
 
-    private:
+    protected:
     /// @brief 接続先とやり取りするホスト
     ENetHost *m_host;
 };

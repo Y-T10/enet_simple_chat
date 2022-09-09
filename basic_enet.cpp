@@ -75,11 +75,6 @@ const bool basic_enet::handle_host_event(const std::function<void(const ENetEven
     return false;
 }
 
-void basic_enet::broadcast(const size_t ch, ENetPacket* packet){
-    assert(*this);
-    enet_host_broadcast(m_host, ch, packet);
-}
-
 void basic_enet::flush(){
     enet_host_flush(m_host);
 }
