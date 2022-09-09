@@ -39,7 +39,6 @@ const std::function<const bool(const ENetPeer*)>& finder){
         if(finder(p)){
             return p;
         }
-        enet_peer_disconnect(p, 0);
     }
     return std::nullopt;
 }
