@@ -11,3 +11,10 @@ void PrintPacket(const ENetPacket* packet){
     }
     fprintf(stderr, "\n");
 }
+
+const ENetAddress CreateENetAddress(const std::string& hostname, const enet_uint16 port){
+    ENetAddress address;
+    enet_address_set_host(&address, hostname.data());
+    address.port = port;
+    return address;
+}
