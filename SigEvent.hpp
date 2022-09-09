@@ -3,6 +3,8 @@
 #include<algorithm>
 #include<boost/noncopyable.hpp>
 #include<csignal>
+#include<vector>
+#include<functional>
 
 class SigEvent : private boost::noncopyable {
     public:
