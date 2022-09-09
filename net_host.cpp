@@ -13,7 +13,7 @@ NetHost::~NetHost(){
 
 const bool NetHost::set_host(const HostSetting& s){
     clear_host();
-    m_host = enet_host_create(&(s.address), s.peer_max, s.packet_ch_max, s.down_size, s.up_size);
+    m_host = enet_host_create(s.address, s.peer_max, s.packet_ch_max, s.down_size, s.up_size);
     return m_host != NULL;
 }
 

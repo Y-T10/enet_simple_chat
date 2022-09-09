@@ -30,7 +30,8 @@ class server_system : private boost::noncopyable {
 
     void init() noexcept{
         m_net = std::make_unique<NetHost>();
-        m_net->set_host({128, 2, 0, 0, {.host = ENET_HOST_ANY, .port = PORT}});
+        ENetAddress addr = {.host = ENET_HOST_ANY, .port = PORT};
+        m_net->set_host({128, 2, 0, 0, &addr});
         m_sig = std::make_unique<SigEvent>();
         m_sig->set_signal({SIGHUP, SIGTERM});
         m_user.clear();

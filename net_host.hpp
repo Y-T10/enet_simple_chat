@@ -22,7 +22,7 @@ struct HostSetting {
     /// @brief 毎秒送信バイトサイズ
     enet_uint32 up_size;
     /// @brief ホストのアドレス
-    ENetAddress address;
+    ENetAddress* address;
 };
 
 class NetHost {
