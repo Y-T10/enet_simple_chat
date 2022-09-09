@@ -45,13 +45,6 @@ class basic_enet : private boost::noncopyable {
     /// @brief ホストを削除する
     void clear_host();
 
-    /// @brief 接続を要求する
-    /// @param dst 接続先のアドレス
-    /// @param max_ch 使用するチャンネルの数
-    /// @param data 接続先に与える値
-    /// @return 接続要求の成否
-    const bool request_connection(const ENetAddress& dst, const size_t max_ch, const enet_uint32 data);
-
     /// @brief 目的の接続相手の有無を調べる
     /// @param finder 接続相手かを答える関数
     /// @return 有無の結果

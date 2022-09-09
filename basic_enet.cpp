@@ -29,11 +29,6 @@ basic_enet::operator bool(){
     return m_host != nullptr;
 };
 
-const bool basic_enet::request_connection(const ENetAddress& dst, const size_t max_ch, const enet_uint32 data){
-    assert(*this);
-    return enet_host_connect(m_host, &dst, max_ch, data) != NULL;
-}
-
 const std::optional<ENetPeer*> find_peer(
 const ENetHost *host,
 const std::function<const bool(const ENetPeer*)>& finder){
