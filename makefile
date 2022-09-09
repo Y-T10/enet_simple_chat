@@ -8,7 +8,7 @@ all: server client
 server: server2.o enet_host.o basic_enet.o SigEvent.o
 	g++ $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
-client: client2.o enet_client.o basic_enet.o 
+client: client2.o enet_client.o basic_enet.o  console_io.o
 	g++ $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.cpp
