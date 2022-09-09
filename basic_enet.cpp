@@ -61,7 +61,7 @@ const std::function<void(ENetPeer*)>& peer_handler){
 const bool basic_enet::handle_host_event(const std::function<void(const ENetEvent*)>& event_handler){
     assert(*this);
     //エラーが生じるまでイベントを処理する
-    for(ENetEvent e; enet_host_check_events(m_host, &e) < 0;){
+    for(ENetEvent e; enet_host_service(m_host, &e, 0) >= 0;){
         event_handler(&e);
         if(e.type == ENET_EVENT_TYPE_NONE){
             return true;
