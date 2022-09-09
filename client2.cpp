@@ -1,10 +1,9 @@
 #include<cassert>
 #include<boost/noncopyable.hpp>
-#include<string>
 #include<iostream>
-#include<future>
 #include<memory>
 #include<cstdint>
+#include"console_io.hpp"
 #include "config.hpp"
 #include "enet_client.hpp"
 #include<functional>
@@ -20,35 +19,6 @@ const ENetAddress CreateENetAddress(const std::string& hostname, const enet_uint
     address.port = port;
     return address;
 }
-
-class chat_io {
-    public:
-    chat_io() noexcept
-    :m_message_receiver(){};
-    ~chat_io() = default;
-
-    void add_message(const std::string& message) noexcept{
-        std::cout << message << std::endl;
-    }
-
-    void handle_input(const std::function<void(const std::string&)>& read_handle) noexcept{
-        ///文字入力をイベントハンドルに変更する
-        const auto read_cin = []() -> std::string {
-            std::string message = "";
-            std::cin >> message;
-            return message;
-        };
-        if(!m_message_receiver.valid()){
-            m_message_receiver = std::async(std::launch::async, read_cin);
-        }
-        if(m_message_receiver.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
-            read_handle(m_message_receiver.get());
-            m_message_receiver = std::async(std::launch::async, read_cin);
-        }
-    }
-    private:
-    std::future<std::string> m_message_receiver;
-};
 
 class chat_system : private boost::noncopyable {
     public:
@@ -66,7 +36,7 @@ class chat_system : private boost::noncopyable {
 
     const bool initilize(const std::string& usename){
         m_username = usename;
-        m_io = std::make_unique<chat_io>();
+        m_io = std::make_unique<console_io>();
         m_net = std::make_unique<NetClient>();
         m_net->set_host({1, 2, 0, 0, NULL});
         return m_net->request_connection(CreateENetAddress(HOST, PORT), 2, 1000);
@@ -127,7 +97,7 @@ class chat_system : private boost::noncopyable {
         }
     };
 
-    std::unique_ptr<chat_io> m_io;
+    std::unique_ptr<console_io> m_io;
     std::unique_ptr<NetClient> m_net;
     bool m_quit_flag;
     ///本当はColleagueに封じ込めるべきだが面倒なのでこのようにした。
