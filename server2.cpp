@@ -40,7 +40,7 @@ class server_system : private boost::noncopyable {
     void update() noexcept{
         //シグナルを調べる
         using namespace std::placeholders;
-        const auto sig_handler = std::bind(&server_system::on_singnal, this, _1);
+        const auto sig_handler = std::bind(&server_system::on_signal, this, _1);
         m_sig->handle_signal(sig_handler);
         //ネットワークのイベントを処理する
         const auto net_handler = std::bind(&server_system::on_net, this, _1);
@@ -104,7 +104,7 @@ class server_system : private boost::noncopyable {
         }
     };
 
-    void on_singnal(const int sig){
+    void on_signal(const int sig){
         std::cerr << "[signal] id: " << sig << std::endl;
         //終了シグナルを受信したか
         if(sig == SIGTERM){
