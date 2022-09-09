@@ -22,11 +22,7 @@ class PacketStream : private boost::noncopyable {
 
     /// @brief パケットに書き出す
     /// @return 書き出されたパケット
-    ENetPacket* packet() noexcept{            
-        return enet_packet_create(
-                m_buffer.data(), m_buffer.size(),
-                ENET_PACKET_FLAG_RELIABLE);
-    };
+    ENetPacket* packet() noexcept;
 
     private:
     /// @brief 値が書き込まれるバッファ
