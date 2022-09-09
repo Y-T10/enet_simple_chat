@@ -29,10 +29,9 @@ NetHost::operator bool(){
     return m_host != nullptr;
 };
 
-const bool NetHost::request_connection(const ENetAddress* dst, const size_t max_ch, const enet_uint32 data){
+const bool NetHost::request_connection(const ENetAddress& dst, const size_t max_ch, const enet_uint32 data){
     assert(*this);
-    assert(dst);
-    return enet_host_connect(m_host, dst, max_ch, data) != NULL;
+    return enet_host_connect(m_host, &dst, max_ch, data) != NULL;
 }
 
 const std::optional<ENetPeer*> find_peer(
