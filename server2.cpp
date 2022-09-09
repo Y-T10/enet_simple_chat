@@ -130,6 +130,7 @@ int  main(int argc, char ** argv) {
     }
 
     auto m_server_sys = std::make_unique<server_system>();
+    m_server_sys->init();
     while(!m_server_sys->isQuit()){
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         m_server_sys->update();
