@@ -7,6 +7,7 @@
 #include"config.hpp"
 #include"enet_client.hpp"
 #include"enet_utils.hpp"
+#include"enet_packet_stream.hpp"
 #include<functional>
 #include<thread>
 #include<msgpack.hpp>
@@ -52,10 +53,11 @@ class chat_system : private boost::noncopyable {
             return;
         }
         m_net->handle_peer(
-            [](const ENetPeer* p)->const bool{return (uintptr_t)(p->data) != (uintptr_t)(0xff);},
+            [](const ENetPeer* p)->const bool{return (uintptr_t)(p->data) == (uintptr_t)(0xff);},
             [this,&msg](ENetPeer* p){
-                ENetPacket* packet = enet_packet_create(msg.data(), msg.size(), ENET_PACKET_FLAG_RELIABLE);
-                enet_peer_send(p, 0,packet);
+                PacketStream pstream;
+                pstream.write(msg);
+                enet_peer_send(p, 0,pstream.packet());
             });
         m_net->flush();
         return;
@@ -63,11 +65,14 @@ class chat_system : private boost::noncopyable {
 
     void on_net(const ENetEvent* e){
         if(e->type == ENET_EVENT_TYPE_NONE){
-            std::cerr << "waiting for a new event...\r";
             return;
         }
         if(e->type == ENET_EVENT_TYPE_CONNECT){
             e->peer->data = (void*)(uintptr_t)(0xff);
+            PacketStream pstream;
+            pstream.write(m_username);
+            enet_peer_send(e->peer, 0,pstream.packet());
+            m_net->flush();
             return;
         }
         if(e->type == ENET_EVENT_TYPE_RECEIVE){
