@@ -7,11 +7,8 @@
 #include "config.hpp"
 #include "enet_client.hpp"
 #include<functional>
-
-#include"meditator.hpp"
-#include<unistd.h>
+#include<thread>
 #include<msgpack.hpp>
-#include<boost/container_hash/hash.hpp>
 
 const ENetAddress CreateENetAddress(const std::string& hostname, const enet_uint16 port){
     ENetAddress address;
