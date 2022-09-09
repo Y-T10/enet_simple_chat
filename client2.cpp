@@ -4,18 +4,12 @@
 #include<memory>
 #include<cstdint>
 #include"console_io.hpp"
-#include "config.hpp"
-#include "enet_client.hpp"
+#include"config.hpp"
+#include"enet_client.hpp"
+#include"enet_utils.hpp"
 #include<functional>
 #include<thread>
 #include<msgpack.hpp>
-
-const ENetAddress CreateENetAddress(const std::string& hostname, const enet_uint16 port){
-    ENetAddress address;
-    enet_address_set_host(&address, hostname.data());
-    address.port = port;
-    return address;
-}
 
 class chat_system : private boost::noncopyable {
     public:
