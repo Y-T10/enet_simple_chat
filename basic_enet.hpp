@@ -25,13 +25,13 @@ struct HostSetting {
     ENetAddress* address;
 };
 
-class NetHost {
+class basic_enet {
     public:
     /// @brief 既定のコンストラクタ
-    NetHost();
+    basic_enet();
 
     /// @brief デストラクタ
-    ~NetHost();
+    ~basic_enet();
 
     ///状態確認用演算子
     ///@return エラーの有無を返す

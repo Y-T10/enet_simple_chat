@@ -1,23 +1,23 @@
-#include"net_host.hpp"
+#include"basic_enet.hpp"
 #include<cassert>
 #include<optional>
 
-NetHost::NetHost():
+basic_enet::basic_enet():
 m_host(nullptr){};
 
-NetHost::~NetHost(){
+basic_enet::~basic_enet(){
     if(m_host != NULL){
         enet_host_destroy(m_host);
     }
 }
 
-const bool NetHost::set_host(const HostSetting& s){
+const bool basic_enet::set_host(const HostSetting& s){
     clear_host();
     m_host = enet_host_create(s.address, s.peer_max, s.packet_ch_max, s.down_size, s.up_size);
     return m_host != NULL;
 }
 
-void NetHost::clear_host(){
+void basic_enet::clear_host(){
     if(m_host == NULL){
         return;
     }
@@ -25,11 +25,11 @@ void NetHost::clear_host(){
     m_host = NULL;
 }
 
-NetHost::operator bool(){
+basic_enet::operator bool(){
     return m_host != nullptr;
 };
 
-const bool NetHost::request_connection(const ENetAddress& dst, const size_t max_ch, const enet_uint32 data){
+const bool basic_enet::request_connection(const ENetAddress& dst, const size_t max_ch, const enet_uint32 data){
     assert(*this);
     return enet_host_connect(m_host, &dst, max_ch, data) != NULL;
 }
@@ -49,11 +49,11 @@ const std::function<const bool(const ENetPeer*)>& finder){
     return std::nullopt;
 }
 
-const bool NetHost::is_there_peer(const std::function<const bool(const ENetPeer*)>& finder){
+const bool basic_enet::is_there_peer(const std::function<const bool(const ENetPeer*)>& finder){
     return find_peer(m_host, finder).has_value();
 }
 
-void NetHost::handle_peer(
+void basic_enet::handle_peer(
 const std::function<const bool(const ENetPeer*)>& finder,
 const std::function<void(ENetPeer*)>& peer_handler){
     assert(*this);
@@ -63,7 +63,7 @@ const std::function<void(ENetPeer*)>& peer_handler){
     }
 }
 
-const bool NetHost::handle_host_event(const std::function<void(const ENetEvent*)>& event_handler){
+const bool basic_enet::handle_host_event(const std::function<void(const ENetEvent*)>& event_handler){
     assert(*this);
     //エラーが生じるまでイベントを処理する
     for(ENetEvent e; enet_host_check_events(m_host, &e) < 0;){
@@ -75,16 +75,16 @@ const bool NetHost::handle_host_event(const std::function<void(const ENetEvent*)
     return false;
 }
 
-void NetHost::broadcast(const size_t ch, ENetPacket* packet){
+void basic_enet::broadcast(const size_t ch, ENetPacket* packet){
     assert(*this);
     enet_host_broadcast(m_host, ch, packet);
 }
 
-void NetHost::flush(){
+void basic_enet::flush(){
     enet_host_flush(m_host);
 }
 
-void NetHost::close_all(){
+void basic_enet::close_all(){
     const auto begin = m_host->peers;
     const auto end   = m_host->peers + m_host->peerCount;
     for(auto p = begin; p != end; ++p){
