@@ -36,7 +36,7 @@ class chat_system : private boost::noncopyable {
         m_io = std::make_unique<console_io>();
         m_net = std::make_unique<NetClient>();
         m_net->set_host({1, 2, 0, 0, NULL});
-        return m_net->request_connection(CreateENetAddress(HOST, PORT), 2, 1000);
+        return m_net->request_connection(CreateENetAddress(HOST, PORT), 2, 0);
     }
 
     const bool is_quit() noexcept{
