@@ -16,5 +16,5 @@ client: client2.o enet_client.o basic_enet.o
 
 clean:
 	-@rm *.o
-	-@rm server.exe
-	-@rm client.exe
+	-@rm server
+	-@rm client
