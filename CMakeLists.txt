@@ -15,8 +15,5 @@ find_pkg_conf(libenet)
 #C++の共通設定を追加
 include(cpp_common.cmake)
 
-#C++の共通設定を追加
-include(cpp_common.cmake)
-
 #サブディレクトリ
 add_subdirectory(src)
