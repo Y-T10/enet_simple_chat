@@ -22,14 +22,14 @@ include(sig_event.cmake)
 #ライブラリを追加
 target_link_libraries(
     server PRIVATE
-    cpp_common
+    cpp_common_flags
     enet_host
     enet_packet_stream
     sig_event
 )
 target_link_libraries(
     client PRIVATE
-    cpp_common
+    cpp_common_flags
     console_io
     enet_client
     enet_packet_stream
