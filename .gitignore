@@ -3,6 +3,7 @@ client
 server
 *.exe
 *.o
+*build*/
 
 # エディタ固有のデータを除外
 .vscode/
