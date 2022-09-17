@@ -1,8 +1,6 @@
 #ライブラリを追加
 add_library(enet_host)
 
-include(basic_enet.cmake)
-
 #プログラムファイルを追加
 # - ${CMAKE_CURRENT_SOURCE_DIR}: このファイルがあるディレクトリ
 target_sources(enet_host PRIVATE enet_host.cpp)

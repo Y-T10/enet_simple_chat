@@ -12,6 +12,7 @@ target_sources(client PRIVATE client.cpp)
 target_include_directories(server PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(client PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+include(basic_enet.cmake)
 include(console_io.cmake)
 include(enet_client.cmake)
 include(enet_host.cmake)
