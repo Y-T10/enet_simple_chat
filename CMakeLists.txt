@@ -6,14 +6,14 @@ cmake_minimum_required(VERSION 3.20)
 project(simple_enet_chat VERSION 0.0.1 LANGUAGES CXX)
 cmake_policy(SET CMP0076 NEW)
 
-#必要なモジュールの読み込み
-include(cpp_common_flags.cmake)
-include(find_pkg_conf.cmake)
-
 #必要なライブラリを探す
+include(find_pkg_conf.cmake)
 find_package(Boost REQUIRED)
 find_package(msgpack REQUIRED)
 find_pkg_conf(enet)
+
+#C++の共通設定を追加
+include(cpp_common.cmake)
 
 #サブディレクトリ
 add_subdirectory(src)
