@@ -1,6 +1,6 @@
 #include"config.hpp"
 #include"enet_host.hpp"
-#include"SigEvent.hpp"
+#include"sig_event.hpp"
 #include"enet_packet_stream.hpp"
 #include<algorithm>
 #include<memory>
