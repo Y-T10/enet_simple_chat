@@ -20,6 +20,10 @@ class PacketStream : private boost::noncopyable {
         msgpack::pack(m_buffer, value);
     };
 
+    /// @brief リアルタイムで送信されるパケットに書き出す
+    /// @return 書き出されたパケット
+    ENetPacket* realtime_packet() noexcept;
+
     /// @brief パケットに書き出す
     /// @return 書き出されたパケット
     ENetPacket* packet() noexcept;
