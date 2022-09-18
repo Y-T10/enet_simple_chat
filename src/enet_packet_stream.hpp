@@ -3,6 +3,7 @@
 #include<enet/enet.h>
 #include<boost/noncopyable.hpp>
 #include<msgpack.hpp>
+#include<functional>
 
 class PacketStream : private boost::noncopyable {
     public:
@@ -32,3 +33,13 @@ class PacketStream : private boost::noncopyable {
     /// @brief 値が書き込まれるバッファ
     msgpack::sbuffer m_buffer;
 };
+
+/// @brief パケットを作成する
+/// @param writer バッファに書き込む関数
+/// @return 作成されたパケット
+ENetPacket* create_packet(const std::function<void(msgpack::packer<msgpack::sbuffer>&)>& writer);
+
+/// @brief ストリームに送信されるパケットを作成する
+/// @param writer バッファに書き込む関数
+/// @return 作成されたパケット
+ENetPacket* create_stream_packet(const std::function<void(msgpack::packer<msgpack::sbuffer>&)>& writer);
