@@ -26,8 +26,10 @@ class chat_system : private boost::noncopyable {
         m_net = nullptr;
     }
 
-    const bool initilize(const std::string& usename){
-        m_username = usename;
+    const bool initilize(const std::string& name, const std::string& id){
+        m_username = name;
+        m_user_id  = std::atol(id.c_str());
+        fprintf(stderr, "user name: %s %lu\n", m_username.c_str(), m_user_id);
         m_io = std::make_unique<console_io>();
         m_net = std::make_unique<NetClient>();
         m_net->set_host({1, 2, 0, 0, NULL});
@@ -57,7 +59,7 @@ class chat_system : private boost::noncopyable {
             [this,&msg](ENetPeer* p){
                 PacketStream pstream;
                 pstream.write(msg);
-                enet_peer_send(p, 0,pstream.packet());
+                enet_peer_send(p, 0, pstream.packet());
             });
         m_net->flush();
         return;
@@ -70,8 +72,13 @@ class chat_system : private boost::noncopyable {
         if(e->type == ENET_EVENT_TYPE_CONNECT){
             e->peer->data = (void*)(uintptr_t)(0xff);
             PacketStream pstream;
+            pstream.write(m_user_id);
             pstream.write(m_username);
-            enet_peer_send(e->peer, 0,pstream.packet());
+            enet_peer_send(e->peer, 0, create_packet([this](msgpack::packer<msgpack::sbuffer>& packer){
+                packer.pack_fix_uint64(m_user_id);
+                packer.pack_str(m_username.length());
+                packer.pack_str_body(m_username.c_str(), m_username.length());
+            }));
             m_net->flush();
             return;
         }
@@ -98,14 +105,14 @@ class chat_system : private boost::noncopyable {
     bool m_quit_flag;
     ///本当はColleagueに封じ込めるべきだが面倒なのでこのようにした。
     std::string m_username;
+    uint64_t    m_user_id;
 };
 
 int  main(int argc, char ** argv) {
-    if (argv[1] == NULL) {
-        printf("Usage: client username\n");
+    if (argc < 3) {
+        printf("Usage: client name ID\n");
         exit(1);
     }
-    fprintf(stderr, "user name: %s\n", argv[1]);
 
     if (enet_initialize() != 0) {
         printf("Could not initialize enet.\n");
@@ -114,7 +121,7 @@ int  main(int argc, char ** argv) {
 
     //チャットシステムを作成する
     auto chat_sys = std::make_unique<chat_system>();
-    if(!chat_sys->initilize(argv[1])){
+    if(!chat_sys->initilize(argv[1], argv[2])){
         chat_sys = nullptr;
         enet_deinitialize();
         return 1;
