@@ -43,3 +43,34 @@ ENetPacket* create_packet(const std::function<void(msgpack::packer<msgpack::sbuf
 /// @param writer バッファに書き込む関数
 /// @return 作成されたパケット
 ENetPacket* create_stream_packet(const std::function<void(msgpack::packer<msgpack::sbuffer>&)>& writer);
+
+/// @brief パケット展開関数
+class PacketUnpacker {
+    public:
+    /// @brief コンストラクタ
+    /// @param packet 展開するパケット
+    explicit PacketUnpacker(ENetPacket* packet) noexcept;
+
+    /// @brief デストラクタ
+    ~PacketUnpacker() = default;
+
+    /// @brief 値を読み取り1つ進める
+    /// @tparam T 値の型
+    /// @return 値
+    template <typename T>
+    const T read() noexcept{
+        return get_handler().get().as<T>();
+    };
+
+    /// @brief 問題の有無を返す
+    operator bool();
+
+    private:
+    const msgpack::object_handle get_handler();
+
+    private:
+    /// @brief 読み取り元パケット
+    ENetPacket* m_src;
+    /// @brief 次に読み取る位置
+    size_t m_offset;
+};
