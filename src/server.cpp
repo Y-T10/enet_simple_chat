@@ -46,8 +46,12 @@ class server_system : private boost::noncopyable {
         const auto sig_handler = std::bind(&server_system::on_signal, this, _1);
         m_sig->handle_signal(sig_handler);
         //ネットワークのイベントを処理する
-        const auto net_handler = std::bind(&server_system::on_net, this, _1);
-        m_net->handle_host_event(net_handler);
+        m_net->handle_host_event(
+            std::bind(&server_system::on_disconnect, this, _1),
+            [](const ENetEvent* e){},
+            std::bind(&server_system::on_connect, this, _1),
+            std::bind(&server_system::on_recv, this, _1)
+        );
     }
 
     const bool isQuit() noexcept{
@@ -55,70 +59,53 @@ class server_system : private boost::noncopyable {
     }
 
     private:
-    void on_net(const ENetEvent* e){
-        if(e->type == ENET_EVENT_TYPE_NONE){
-            return;
-        }
-        const auto on_connect = [this](const ENetEvent* e){
-            e->peer->data = NULL;
-            m_user[e->peer] = {};
-            std::cerr << "[connection]" << std::endl;
-        };
-        if(e->type == ENET_EVENT_TYPE_CONNECT){
-            on_connect(e);
-            return;
-        }
-        const auto on_recv = [this](const ENetEvent* e){
-            if(e->peer->data == NULL){
-                e->peer->data = (void*)((uintptr_t)(0xff));
-                PacketUnpacker unpacker(e->packet);
-                m_user[e->peer] = {
-                    .m_id = unpacker.read<ClientID>(),
-                    .m_name = unpacker.read<std::string>()
-                };
-                const std::string user_message = m_user[e->peer].m_name +" has entered.";
-                PacketStream pstream;
-                pstream.write(user_message);
-                m_net->broadcast(1, pstream.packet());
-                m_net->flush();
-                std::cerr << "[new user] "
-                          << "name: " << m_user[e->peer].m_name << ", "
-                          << "id: "   << m_user[e->peer].m_id   << std::endl;
-                return;
-            }
-            object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
-            const auto user_info = m_user[e->peer];
-            const auto msg = result.get().as<std::string>();
-            const std::string user_message = user_info.m_name + ": "+ msg;
+    void on_connect(const ENetEvent* e){
+        e->peer->data = NULL;
+        m_user[e->peer] = {};
+        std::cerr << "[connection]" << std::endl;
+    }
+    void on_recv(const ENetEvent* e){
+        if(e->peer->data == NULL){
+            e->peer->data = (void*)((uintptr_t)(0xff));
+            PacketUnpacker unpacker(e->packet);
+            m_user[e->peer] = {
+                .m_id = unpacker.read<ClientID>(),
+                .m_name = unpacker.read<std::string>()
+            };
+            const std::string user_message = m_user[e->peer].m_name +" has entered.";
             PacketStream pstream;
             pstream.write(user_message);
             m_net->broadcast(1, pstream.packet());
             m_net->flush();
-        };
-        if(e->type == ENET_EVENT_TYPE_RECEIVE){
-            on_recv(e);
+            std::cerr << "[new user] "
+                      << "name: " << m_user[e->peer].m_name << ", "
+                      << "id: "   << m_user[e->peer].m_id   << std::endl;
             return;
         }
-        const auto on_disconnect = [this](const ENetEvent* e){
-            const auto usr_info = m_user[e->peer];
-            const std::string disco_message = usr_info.m_name + " has disconnected.\n";
-            m_user.erase(e->peer);
-            e->peer->data = NULL;
-            PacketStream pstream;
-            pstream.write(disco_message);
-            m_net->broadcast(1, pstream.packet());
-            m_net->flush();
-            enet_peer_disconnect(e->peer, 0);
-            std::cerr   << "[disconnect]"
-                        << " user: " << usr_info.m_name
-                        << " id: " << usr_info.m_id
-                        << std::endl;
-        };
-        if(e->type == ENET_EVENT_TYPE_DISCONNECT){
-            on_disconnect(e);
-            return;
-        }
-    };
+        object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
+        const auto user_info = m_user[e->peer];
+        const auto msg = result.get().as<std::string>();
+        const std::string user_message = user_info.m_name + ": "+ msg;
+        PacketStream pstream;
+        pstream.write(user_message);
+        m_net->broadcast(1, pstream.packet());
+        m_net->flush();
+    }
+    void on_disconnect(const ENetEvent* e){
+        const auto usr_info = m_user[e->peer];
+        const std::string disco_message = usr_info.m_name + " has disconnected.\n";
+        m_user.erase(e->peer);
+        e->peer->data = NULL;
+        PacketStream pstream;
+        pstream.write(disco_message);
+        m_net->broadcast(1, pstream.packet());
+        m_net->flush();
+        enet_peer_disconnect(e->peer, 0);
+        std::cerr   << "[disconnect]"
+                    << " user: " << usr_info.m_name
+                    << " id: " << usr_info.m_id
+                    << std::endl;
+    }
 
     void on_signal(const int sig){
         std::cerr << "[signal] id: " << sig << std::endl;
