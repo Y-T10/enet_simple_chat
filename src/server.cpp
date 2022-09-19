@@ -12,9 +12,11 @@
 using namespace std;
 using namespace msgpack;
 
-using ClientID = uintptr_t;
+using ClientID = uint64_t;
+using ENetPeerID = ENetPeer*;
 
 struct user_info {
+    ClientID m_id;
     string m_name;
 };
 
@@ -58,33 +60,39 @@ class server_system : private boost::noncopyable {
             return;
         }
         const auto on_connect = [this](const ENetEvent* e){
-            const user_info new_user = {.m_name = ""};
-            m_user.emplace("", new_user);
-            std::cerr << "[connection]" << std::endl;
             e->peer->data = NULL;
+            m_user[e->peer] = {};
+            std::cerr << "[connection]" << std::endl;
         };
         if(e->type == ENET_EVENT_TYPE_CONNECT){
             on_connect(e);
             return;
         }
         const auto on_recv = [this](const ENetEvent* e){
-            object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
-            const auto msg = result.get().as<std::string>();
             if(e->peer->data == NULL){
-                m_user[msg] = {.m_name = msg};
                 e->peer->data = (void*)((uintptr_t)(0xff));
-                const std::string user_message = msg +" has entered.";
+                PacketUnpacker unpacker(e->packet);
+                m_user[e->peer] = {
+                    .m_id = unpacker.read<ClientID>(),
+                    .m_name = unpacker.read<std::string>()
+                };
+                const std::string user_message = m_user[e->peer].m_name +" has entered.";
                 PacketStream pstream;
                 pstream.write(user_message);
-                m_net->broadcast(0, pstream.packet());
+                m_net->broadcast(1, pstream.packet());
                 m_net->flush();
-                std::cerr << "new user: " << msg << std::endl;
+                std::cerr << "[new user] "
+                          << "name: " << m_user[e->peer].m_name << ", "
+                          << "id: "   << m_user[e->peer].m_id   << std::endl;
                 return;
             }
-            const std::string user_message = std::string("some one") + ": "+ msg;
+            object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
+            const auto user_info = m_user[e->peer];
+            const auto msg = result.get().as<std::string>();
+            const std::string user_message = user_info.m_name + ": "+ msg;
             PacketStream pstream;
             pstream.write(user_message);
-            m_net->broadcast(0, pstream.packet());
+            m_net->broadcast(1, pstream.packet());
             m_net->flush();
         };
         if(e->type == ENET_EVENT_TYPE_RECEIVE){
@@ -92,17 +100,19 @@ class server_system : private boost::noncopyable {
             return;
         }
         const auto on_disconnect = [this](const ENetEvent* e){
-            const std::string disco_message = std::string("some one") + " has disconnected.\n";
-            std::cerr   << "[disconnect]"
-                        << " user: " << std::string("some one")
-                        << " id: " << "not set"
-                        << std::endl;
+            const auto usr_info = m_user[e->peer];
+            const std::string disco_message = usr_info.m_name + " has disconnected.\n";
+            m_user.erase(e->peer);
+            e->peer->data = NULL;
             PacketStream pstream;
             pstream.write(disco_message);
-            m_net->broadcast(0, pstream.packet());
+            m_net->broadcast(1, pstream.packet());
             m_net->flush();
-            e->peer->data = NULL;
             enet_peer_disconnect(e->peer, 0);
+            std::cerr   << "[disconnect]"
+                        << " user: " << usr_info.m_name
+                        << " id: " << usr_info.m_id
+                        << std::endl;
         };
         if(e->type == ENET_EVENT_TYPE_DISCONNECT){
             on_disconnect(e);
@@ -125,7 +135,7 @@ class server_system : private boost::noncopyable {
     private:
     std::unique_ptr<NetHost> m_net;
     std::unique_ptr<SigEvent> m_sig;
-    boost::unordered_map<std::string, user_info> m_user;
+    boost::unordered_map<ENetPeerID, user_info> m_user;
     bool m_isQuit;
 };
 
