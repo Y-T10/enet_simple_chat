@@ -57,7 +57,7 @@ const std::function<void(ENetPeer*)>& peer_handler){
     }
 }
 
-const bool basic_enet::handle_host_event(const std::function<void(const ENetEvent*)>& event_handler){
+const bool basic_enet::handle_host_event(const event_handler& event_handler){
     assert(*this);
     //エラーが生じるまでイベントを処理する
     for(ENetEvent e; enet_host_service(m_host, &e, 0) >= 0;){
@@ -65,6 +65,31 @@ const bool basic_enet::handle_host_event(const std::function<void(const ENetEven
         if(e.type == ENET_EVENT_TYPE_NONE){
             return true;
         }
+    }
+    return false;
+}
+
+const bool basic_enet::handle_host_event(
+const event_handler& on_disconnect,
+const event_handler& on_nothing,
+const event_handler& on_connect,
+const event_handler& on_recv){
+    assert(*this);
+    for(ENetEvent e; enet_host_service(m_host, &e, 0) >= 0;){
+        if(e.type == ENET_EVENT_TYPE_NONE){
+            on_nothing(&e);
+            return true;
+        }
+        if(e.type == ENET_EVENT_TYPE_CONNECT){
+            on_connect(&e);
+            continue;
+        }
+        if(e.type == ENET_EVENT_TYPE_RECEIVE){
+            on_recv(&e);
+            continue;
+        }
+        assert(e.type == ENET_EVENT_TYPE_DISCONNECT);
+        on_disconnect(&e);
     }
     return false;
 }
