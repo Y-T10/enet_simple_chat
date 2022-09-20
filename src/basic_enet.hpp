@@ -58,10 +58,26 @@ class basic_enet : private boost::noncopyable {
         const std::function<void(ENetPeer*)>& peer_handler
     );
 
+    /// @brief イベントハンドル関数
+    using event_handler = std::function<void(const ENetEvent*)>;
+
     ///ホストのイベントを処理する
     ///@param event_handler イベントを処理する関数
     ///@return イベント処理の結果
-    const bool handle_host_event(const std::function<void(const ENetEvent*)>& event_handler);
+    const bool handle_host_event(const event_handler& event_handler);
+
+    /// @brief ホストのイベントを処理する
+    /// @param on_disconnect 切断イベント用
+    /// @param on_nothing イベントが無い場合用
+    /// @param on_connect 接続イベント用
+    /// @param on_recv 受信イベント用
+    /// @return イベント処理の結果
+    const bool handle_host_event(
+        const event_handler& on_disconnect,
+        const event_handler& on_nothing,
+        const event_handler& on_connect,
+        const event_handler& on_recv
+    );
 
     ///データを実際に送る
     void flush();
