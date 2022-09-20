@@ -15,10 +15,18 @@ class chat_system : private boost::noncopyable {
     ~chat_system();
 
     /// @brief 初期化関数
-    /// @param name ユーザ名
-    /// @param id ユーザID
     /// @return 初期化結果
-    const bool initilize(const std::string& name, const std::string& id);
+    const bool initilize();
+
+    /// @brief ユーザ情報を登録する
+    /// @param info ユーザ情報
+    void register_user_info(const UserInfo& info);
+
+    /// @brief サーバに接続要求を送る
+    /// @param hostname ホスト名
+    /// @param port ポート番号
+    /// @return 接続要求送信の成否
+    const bool connect_server(const std::string& hostname, const uint32_t port);
 
     /// @brief プログラムを終了するか
     /// @return 終了フラグ
@@ -40,6 +48,8 @@ class chat_system : private boost::noncopyable {
     bool m_quit_flag;
     ///本当はColleagueに封じ込めるべきだが面倒なのでこのようにした。
     UserInfo m_info;
+    /// @brief 使用するチャンネルの数
+    const size_t m_ch_max = 2;
 };
 
 int  main(int argc, char ** argv);

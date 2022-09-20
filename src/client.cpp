@@ -3,7 +3,6 @@
 #include<cassert>
 #include<iostream>
 #include<cstdint>
-#include"config.hpp"
 #include"enet_utils.hpp"
 #include"enet_packet_stream.hpp"
 #include<functional>
@@ -14,7 +13,8 @@ chat_system::chat_system() noexcept
 :m_io(nullptr)
 ,m_net(nullptr)
 ,m_quit_flag(false)
-,m_info(){
+,m_info()
+,m_ch_max(2){
 }
 
 chat_system::~chat_system(){
@@ -22,14 +22,26 @@ chat_system::~chat_system(){
     m_net = nullptr;
 }
 
-const bool chat_system::initilize(const std::string& name, const std::string& id){
-    m_info.name = name;
-    m_info.id = std::atol(id.c_str());
-    fprintf(stderr, "user name: %s %lu\n", m_info.name.c_str(), m_info.id);
+const bool chat_system::initilize(){
     m_io = std::make_unique<console_io>();
     m_net = std::make_unique<NetClient>();
-    m_net->set_host({1, 2, 0, 0, NULL});
-    return m_net->request_connection(CreateENetAddress(HOST, PORT), 2, 0);
+    return m_io && m_net && m_net->set_host({
+        .peer_max = 1, .packet_ch_max= m_ch_max,
+        .down_size = 0, .up_size = 0,
+        .address = NULL
+    });
+}
+
+void chat_system::register_user_info(const UserInfo& info){
+    m_info = info;
+    fprintf(stderr, "user name: %s %lu\n", m_info.name.c_str(), m_info.id);
+}
+
+const bool chat_system::connect_server(const std::string& hostname, const uint32_t port){
+    if((bool)m_net == false || (*m_net) == false){
+        return false;
+    }
+    return m_net->request_connection(CreateENetAddress(hostname, port), m_ch_max);
 }
 
 const bool chat_system::is_quit() noexcept{
@@ -91,8 +103,8 @@ void chat_system::on_net(const ENetEvent* e){
 };
 
 int main(int argc, char ** argv) {
-    if (argc < 3) {
-        printf("Usage: client name ID\n");
+    if (argc < 5) {
+        printf("Usage: [user name] [user ID] [server host] [server port]\n");
         exit(1);
     }
 
@@ -103,7 +115,15 @@ int main(int argc, char ** argv) {
 
     //チャットシステムを作成する
     auto chat_sys = std::make_unique<chat_system>();
-    if(!chat_sys->initilize(argv[1], argv[2])){
+    if(!chat_sys->initilize()){
+        chat_sys = nullptr;
+        enet_deinitialize();
+        return 1;
+    }
+    //ユーザ情報を登録
+    chat_sys->register_user_info({.name = argv[1], .id = (ClientID)std::atol(argv[2])});
+    //サーバに接続要求を投げる
+    if(!chat_sys->connect_server(argv[3], std::atoi(argv[4]))){
         chat_sys = nullptr;
         enet_deinitialize();
         return 1;
