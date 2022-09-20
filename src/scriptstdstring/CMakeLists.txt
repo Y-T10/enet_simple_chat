@@ -1,0 +1,4 @@
+add_library(asStdString)
+target_sources(asStdString PRIVATE scriptstdstring.cpp scriptstdstring_utils.cpp)
+target_include_directories(asStdString PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(asStdString PRIVATE cpp_common_flags Angelscript::angelscript)
