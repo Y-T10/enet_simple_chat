@@ -8,6 +8,7 @@
 #include"enet_client.hpp"
 #include"enet_utils.hpp"
 #include"enet_packet_stream.hpp"
+#include"user_info.hpp"
 #include<functional>
 #include<thread>
 #include<msgpack.hpp>
@@ -18,7 +19,7 @@ class chat_system : private boost::noncopyable {
     :m_io(nullptr)
     ,m_net(nullptr)
     ,m_quit_flag(false)
-    ,m_username("default_name"){
+    ,m_info(){
     }
 
     ~chat_system(){
@@ -27,9 +28,9 @@ class chat_system : private boost::noncopyable {
     }
 
     const bool initilize(const std::string& name, const std::string& id){
-        m_username = name;
-        m_user_id  = std::atol(id.c_str());
-        fprintf(stderr, "user name: %s %lu\n", m_username.c_str(), m_user_id);
+        m_info.name = name;
+        m_info.id = std::atol(id.c_str());
+        fprintf(stderr, "user name: %s %lu\n", m_info.name.c_str(), m_info.id);
         m_io = std::make_unique<console_io>();
         m_net = std::make_unique<NetClient>();
         m_net->set_host({1, 2, 0, 0, NULL});
@@ -72,13 +73,8 @@ class chat_system : private boost::noncopyable {
         if(e->type == ENET_EVENT_TYPE_CONNECT){
             e->peer->data = (void*)(uintptr_t)(0xff);
             PacketStream pstream;
-            pstream.write(m_user_id);
-            pstream.write(m_username);
-            enet_peer_send(e->peer, 0, create_packet([this](msgpack::packer<msgpack::sbuffer>& packer){
-                packer.pack_fix_uint64(m_user_id);
-                packer.pack_str(m_username.length());
-                packer.pack_str_body(m_username.c_str(), m_username.length());
-            }));
+            pstream.write(m_info);
+            enet_peer_send(e->peer, 0, pstream.packet());
             m_net->flush();
             return;
         }
@@ -104,8 +100,7 @@ class chat_system : private boost::noncopyable {
     std::unique_ptr<NetClient> m_net;
     bool m_quit_flag;
     ///本当はColleagueに封じ込めるべきだが面倒なのでこのようにした。
-    std::string m_username;
-    uint64_t    m_user_id;
+    UserInfo m_info;
 };
 
 int  main(int argc, char ** argv) {

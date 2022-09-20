@@ -2,6 +2,7 @@
 #include"enet_host.hpp"
 #include"sig_event.hpp"
 #include"enet_packet_stream.hpp"
+#include"user_info.hpp"
 #include<algorithm>
 #include<memory>
 #include<thread>
@@ -12,13 +13,7 @@
 using namespace std;
 using namespace msgpack;
 
-using ClientID = uint64_t;
 using ENetPeerID = ENetPeer*;
-
-struct user_info {
-    ClientID m_id;
-    string m_name;
-};
 
 class server_system : private boost::noncopyable {
     public:
@@ -68,24 +63,21 @@ class server_system : private boost::noncopyable {
         if(e->peer->data == NULL){
             e->peer->data = (void*)((uintptr_t)(0xff));
             PacketUnpacker unpacker(e->packet);
-            m_user[e->peer] = {
-                .m_id = unpacker.read<ClientID>(),
-                .m_name = unpacker.read<std::string>()
-            };
-            const std::string user_message = m_user[e->peer].m_name +" has entered.";
+            m_user[e->peer] = unpacker.read<UserInfo>();
+            const std::string user_message = m_user[e->peer].name +" has entered.";
             PacketStream pstream;
             pstream.write(user_message);
             m_net->broadcast(1, pstream.packet());
             m_net->flush();
             std::cerr << "[new user] "
-                      << "name: " << m_user[e->peer].m_name << ", "
-                      << "id: "   << m_user[e->peer].m_id   << std::endl;
+                      << "name: " << m_user[e->peer].name << ", "
+                      << "id: "   << m_user[e->peer].id   << std::endl;
             return;
         }
         object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
         const auto user_info = m_user[e->peer];
         const auto msg = result.get().as<std::string>();
-        const std::string user_message = user_info.m_name + ": "+ msg;
+        const std::string user_message = user_info.name + ": "+ msg;
         PacketStream pstream;
         pstream.write(user_message);
         m_net->broadcast(1, pstream.packet());
@@ -93,7 +85,7 @@ class server_system : private boost::noncopyable {
     }
     void on_disconnect(const ENetEvent* e){
         const auto usr_info = m_user[e->peer];
-        const std::string disco_message = usr_info.m_name + " has disconnected.\n";
+        const std::string disco_message = usr_info.name + " has disconnected.\n";
         m_user.erase(e->peer);
         e->peer->data = NULL;
         PacketStream pstream;
@@ -102,8 +94,8 @@ class server_system : private boost::noncopyable {
         m_net->flush();
         enet_peer_disconnect(e->peer, 0);
         std::cerr   << "[disconnect]"
-                    << " user: " << usr_info.m_name
-                    << " id: " << usr_info.m_id
+                    << " user: " << usr_info.name
+                    << " id: " << usr_info.id
                     << std::endl;
     }
 
@@ -122,7 +114,7 @@ class server_system : private boost::noncopyable {
     private:
     std::unique_ptr<NetHost> m_net;
     std::unique_ptr<SigEvent> m_sig;
-    boost::unordered_map<ENetPeerID, user_info> m_user;
+    boost::unordered_map<ENetPeerID, UserInfo> m_user;
     bool m_isQuit;
 };
 
