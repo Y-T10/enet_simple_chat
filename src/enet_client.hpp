@@ -16,5 +16,5 @@ class NetClient : public basic_enet {
     /// @param max_ch 使用するチャンネルの数
     /// @param data 接続先に渡す値
     /// @return 接続要求送信の成否
-    const bool request_connection(const ENetAddress& dst, const size_t max_ch, const enet_uint32 data);
+    const bool request_connection(const ENetAddress& dst, const size_t max_ch, const enet_uint32 data = 0);
 };
