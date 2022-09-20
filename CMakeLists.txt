@@ -10,6 +10,7 @@ cmake_policy(SET CMP0076 NEW)
 include(find_pkg_conf.cmake)
 find_package(Boost REQUIRED)
 find_package(msgpack REQUIRED)
+find_package(Angelscript REQUIRED)
 find_pkg_conf(libenet)
 
 #C++の共通設定を追加
