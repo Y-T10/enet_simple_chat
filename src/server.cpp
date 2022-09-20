@@ -1,6 +1,7 @@
 #include"server.hpp"
 
 #include"enet_packet_stream.hpp"
+#include"packet_fmt.hpp"
 #include<algorithm>
 #include<thread>
 #include<iostream>
@@ -66,37 +67,62 @@ void server_system::on_connect(const ENetEvent* e){
 }
 
 void server_system::on_recv(const ENetEvent* e){
-    if(e->peer->data == NULL){
-        e->peer->data = (void*)((uintptr_t)(0xff));
-        PacketUnpacker unpacker(e->packet);
-        m_user[e->peer] = unpacker.read<UserInfo>();
-        const std::string user_message = m_user[e->peer].name +" has entered.";
+    PacketUnpacker unpacker(e->packet);
+    if(e->channelID == 0){
+        on_request(e->peer, unpacker);
+        return;
+    }
+    if(e->channelID == 1){
+        on_message(e->peer, unpacker);
+        return;
+    }
+}
+
+void server_system::on_request(ENetPeer* peer ,PacketUnpacker& unpacker){
+    const SysRequestID request_id = unpacker.read<SysRequestID>();
+    if(request_id == SysRequestID::REGISTER_USER){
+        if(peer->data != NULL){
+            return;
+        }
+        peer->data = (void*)((uintptr_t)(0xff));
+        const auto new_user = unpacker.read<UserInfo>();
+        m_user[peer] = new_user;
         PacketStream pstream;
-        pstream.write(user_message);
+        pstream.write(new_user.name + " has entered.");
         m_net->broadcast(1, pstream.packet());
         m_net->flush();
         std::cerr << "[new user] "
-                  << "name: " << m_user[e->peer].name << ", "
-                  << "id: "   << m_user[e->peer].id   << std::endl;
+                  << "name: " << new_user.name << ", "
+                  << "id: "   << new_user.id   << std::endl;
         return;
     }
-    object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
-    const auto user_info = m_user[e->peer];
-    const auto msg = result.get().as<std::string>();
-    const std::string user_message = user_info.name + ": "+ msg;
+}
+
+void server_system::on_message(ENetPeer* peer, PacketUnpacker& unpacker){
+    if(!m_user.contains(peer)){
+        std::cerr << "received from a unregistered user." << std::endl;
+        enet_peer_disconnect(peer, 0);
+        return;
+    }
+    const auto user_info = m_user[peer];
+    const ClientID client_id = unpacker.read<ClientID>();
+    if(client_id != user_info.id){
+        std::cerr << "user \"" << user_info.name << "\" changed their id." << std::endl;
+        enet_peer_disconnect(peer, 0);
+        return;
+    }
     PacketStream pstream;
-    pstream.write(user_message);
+    pstream.write(user_info.name + ": " + unpacker.read<std::string>());
     m_net->broadcast(1, pstream.packet());
     m_net->flush();
 }
 
 void server_system::on_disconnect(const ENetEvent* e){
     const auto usr_info = m_user[e->peer];
-    const std::string disco_message = usr_info.name + " has disconnected.\n";
     m_user.erase(e->peer);
     e->peer->data = NULL;
     PacketStream pstream;
-    pstream.write(disco_message);
+    pstream.write(usr_info.name + " has disconnected.");
     m_net->broadcast(1, pstream.packet());
     m_net->flush();
     enet_peer_disconnect(e->peer, 0);
