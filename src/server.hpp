@@ -36,6 +36,8 @@ class server_system : private boost::noncopyable {
     void on_recv(const ENetEvent* e);
     void on_disconnect(const ENetEvent* e);
     void on_signal(const int sig);
+    void on_request(ENetPeer* peer, PacketUnpacker& unpacker);
+    void on_message(ENetPeer* peer, PacketUnpacker& unpacker);
 
     private:
     /// @brief PeerのID
