@@ -1,6 +1,5 @@
 #include"server.hpp"
 
-#include"config.hpp"
 #include"enet_packet_stream.hpp"
 #include<algorithm>
 #include<thread>
@@ -26,12 +25,21 @@ server_system::~server_system(){
 
 void server_system::init() noexcept{
     m_net = std::make_unique<NetHost>();
-    ENetAddress addr = {.host = ENET_HOST_ANY, .port = PORT};
-    m_net->set_host({128, 2, 0, 0, &addr});
     m_sig = std::make_unique<SigEvent>();
-    m_sig->set_signal({SIGHUP, SIGTERM});
     m_user.clear();
 };
+
+const bool server_system::setup_server(const enet_uint16 port) noexcept{
+    ENetAddress addr = {.host = ENET_HOST_ANY, .port = port};
+    if(!m_sig->set_signal({SIGHUP, SIGTERM})){
+        return false;
+    }
+    return m_net->set_host({
+        .peer_max = 128, .packet_ch_max= 2,
+        .down_size = 0, .up_size = 0,
+        .address = &addr
+    });
+}
 
 void server_system::update() noexcept{
     //シグナルを調べる
@@ -111,6 +119,10 @@ void server_system::on_signal(const int sig){
 };
 
 int main(int argc, char ** argv) {
+    if(argc < 2){
+        printf("usage: server [port number]\n");
+        return 1;
+    }
     if(enet_initialize() != 0) {
         fprintf(stderr, "Could not initialize enet.\n");
         return 0;
@@ -118,6 +130,11 @@ int main(int argc, char ** argv) {
 
     auto m_server_sys = std::make_unique<server_system>();
     m_server_sys->init();
+    if(!m_server_sys->setup_server(atoi(argv[1]))){
+        m_server_sys = nullptr;
+        enet_deinitialize();
+        return 1;
+    }
     while(!m_server_sys->isQuit()){
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         m_server_sys->update();
@@ -125,4 +142,6 @@ int main(int argc, char ** argv) {
     m_server_sys = nullptr;
 
     enet_deinitialize();
+
+    return 0;
 }

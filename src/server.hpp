@@ -9,14 +9,25 @@
 
 class server_system : private boost::noncopyable {
     public:
+    /// @brief コンストラクタ
     server_system() noexcept;
 
+    /// @brief デストラクタ
     ~server_system();
 
+    /// @brief 初期化する
     void init() noexcept;
 
+    /// @brief サーバを立ちあげる
+    /// @param port ポート番号
+    /// @return 立ち上げの成否
+    const bool setup_server(const enet_uint16 port) noexcept;
+
+    /// @brief サーバを更新する
     void update() noexcept;
 
+    /// @brief サーバの終了を調べる
+    /// @return 終了の是非
     const bool isQuit() noexcept;
 
     private:
