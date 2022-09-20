@@ -1,124 +1,116 @@
+#include"server.hpp"
+
 #include"config.hpp"
-#include"enet_host.hpp"
-#include"sig_event.hpp"
 #include"enet_packet_stream.hpp"
-#include"user_info.hpp"
 #include<algorithm>
-#include<memory>
 #include<thread>
-#include<boost/unordered_map.hpp>
 #include<iostream>
 #include<msgpack.hpp>
 
 using namespace std;
 using namespace msgpack;
 
-using ENetPeerID = ENetPeer*;
+server_system::server_system() noexcept
+:m_net(nullptr)
+,m_sig(nullptr)
+,m_user()
+,m_isQuit(false){
+}
 
-class server_system : private boost::noncopyable {
-    public:
-    server_system() noexcept
-    :m_net(nullptr)
-    ,m_isQuit(false){
-    }
+server_system::~server_system(){
+    m_net = nullptr;
+    m_sig = nullptr;
+    m_user.clear();
+    m_isQuit = false;
+}
 
-    ~server_system(){
-        m_net = nullptr;
-    }
+void server_system::init() noexcept{
+    m_net = std::make_unique<NetHost>();
+    ENetAddress addr = {.host = ENET_HOST_ANY, .port = PORT};
+    m_net->set_host({128, 2, 0, 0, &addr});
+    m_sig = std::make_unique<SigEvent>();
+    m_sig->set_signal({SIGHUP, SIGTERM});
+    m_user.clear();
+};
 
-    void init() noexcept{
-        m_net = std::make_unique<NetHost>();
-        ENetAddress addr = {.host = ENET_HOST_ANY, .port = PORT};
-        m_net->set_host({128, 2, 0, 0, &addr});
-        m_sig = std::make_unique<SigEvent>();
-        m_sig->set_signal({SIGHUP, SIGTERM});
-        m_user.clear();
-    };
+void server_system::update() noexcept{
+    //シグナルを調べる
+    using namespace std::placeholders;
+    const auto sig_handler = std::bind(&server_system::on_signal, this, _1);
+    m_sig->handle_signal(sig_handler);
+    //ネットワークのイベントを処理する
+    m_net->handle_host_event(
+        std::bind(&server_system::on_disconnect, this, _1),
+        [](const ENetEvent* e){},
+        std::bind(&server_system::on_connect, this, _1),
+        std::bind(&server_system::on_recv, this, _1)
+    );
+}
 
-    void update() noexcept{
-        //シグナルを調べる
-        using namespace std::placeholders;
-        const auto sig_handler = std::bind(&server_system::on_signal, this, _1);
-        m_sig->handle_signal(sig_handler);
-        //ネットワークのイベントを処理する
-        m_net->handle_host_event(
-            std::bind(&server_system::on_disconnect, this, _1),
-            [](const ENetEvent* e){},
-            std::bind(&server_system::on_connect, this, _1),
-            std::bind(&server_system::on_recv, this, _1)
-        );
-    }
+const bool server_system::isQuit() noexcept{
+    return m_isQuit;
+}
 
-    const bool isQuit() noexcept{
-        return m_isQuit;
-    }
+void server_system::on_connect(const ENetEvent* e){
+    e->peer->data = NULL;
+    m_user[e->peer] = {};
+    std::cerr << "[connection]" << std::endl;
+}
 
-    private:
-    void on_connect(const ENetEvent* e){
-        e->peer->data = NULL;
-        m_user[e->peer] = {};
-        std::cerr << "[connection]" << std::endl;
-    }
-    void on_recv(const ENetEvent* e){
-        if(e->peer->data == NULL){
-            e->peer->data = (void*)((uintptr_t)(0xff));
-            PacketUnpacker unpacker(e->packet);
-            m_user[e->peer] = unpacker.read<UserInfo>();
-            const std::string user_message = m_user[e->peer].name +" has entered.";
-            PacketStream pstream;
-            pstream.write(user_message);
-            m_net->broadcast(1, pstream.packet());
-            m_net->flush();
-            std::cerr << "[new user] "
-                      << "name: " << m_user[e->peer].name << ", "
-                      << "id: "   << m_user[e->peer].id   << std::endl;
-            return;
-        }
-        object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
-        const auto user_info = m_user[e->peer];
-        const auto msg = result.get().as<std::string>();
-        const std::string user_message = user_info.name + ": "+ msg;
+void server_system::on_recv(const ENetEvent* e){
+    if(e->peer->data == NULL){
+        e->peer->data = (void*)((uintptr_t)(0xff));
+        PacketUnpacker unpacker(e->packet);
+        m_user[e->peer] = unpacker.read<UserInfo>();
+        const std::string user_message = m_user[e->peer].name +" has entered.";
         PacketStream pstream;
         pstream.write(user_message);
         m_net->broadcast(1, pstream.packet());
         m_net->flush();
-    }
-    void on_disconnect(const ENetEvent* e){
-        const auto usr_info = m_user[e->peer];
-        const std::string disco_message = usr_info.name + " has disconnected.\n";
-        m_user.erase(e->peer);
-        e->peer->data = NULL;
-        PacketStream pstream;
-        pstream.write(disco_message);
-        m_net->broadcast(1, pstream.packet());
-        m_net->flush();
-        enet_peer_disconnect(e->peer, 0);
-        std::cerr   << "[disconnect]"
-                    << " user: " << usr_info.name
-                    << " id: " << usr_info.id
-                    << std::endl;
-    }
-
-    void on_signal(const int sig){
-        std::cerr << "[signal] id: " << sig << std::endl;
-        //終了シグナルを受信したか
-        if(sig == SIGTERM){
-            //プログラムを正しく終了する(ex. プログラム終了メッセージを発行する)
-            m_net->close_all();
-            m_isQuit = true;
-            return;
-        }
+        std::cerr << "[new user] "
+                  << "name: " << m_user[e->peer].name << ", "
+                  << "id: "   << m_user[e->peer].id   << std::endl;
         return;
-    };
+    }
+    object_handle result = unpack((const char*)(e->packet->data), e->packet->dataLength);
+    const auto user_info = m_user[e->peer];
+    const auto msg = result.get().as<std::string>();
+    const std::string user_message = user_info.name + ": "+ msg;
+    PacketStream pstream;
+    pstream.write(user_message);
+    m_net->broadcast(1, pstream.packet());
+    m_net->flush();
+}
 
-    private:
-    std::unique_ptr<NetHost> m_net;
-    std::unique_ptr<SigEvent> m_sig;
-    boost::unordered_map<ENetPeerID, UserInfo> m_user;
-    bool m_isQuit;
+void server_system::on_disconnect(const ENetEvent* e){
+    const auto usr_info = m_user[e->peer];
+    const std::string disco_message = usr_info.name + " has disconnected.\n";
+    m_user.erase(e->peer);
+    e->peer->data = NULL;
+    PacketStream pstream;
+    pstream.write(disco_message);
+    m_net->broadcast(1, pstream.packet());
+    m_net->flush();
+    enet_peer_disconnect(e->peer, 0);
+    std::cerr   << "[disconnect]"
+                << " user: " << usr_info.name
+                << " id: " << usr_info.id
+                << std::endl;
+}
+
+void server_system::on_signal(const int sig){
+    std::cerr << "[signal] id: " << sig << std::endl;
+    //終了シグナルを受信したか
+    if(sig == SIGTERM){
+        //プログラムを正しく終了する(ex. プログラム終了メッセージを発行する)
+        m_net->close_all();
+        m_isQuit = true;
+        return;
+    }
+    return;
 };
 
-int  main(int argc, char ** argv) {
+int main(int argc, char ** argv) {
     if(enet_initialize() != 0) {
         fprintf(stderr, "Could not initialize enet.\n");
         return 0;
