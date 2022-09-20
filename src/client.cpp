@@ -5,6 +5,7 @@
 #include<cstdint>
 #include"enet_utils.hpp"
 #include"enet_packet_stream.hpp"
+#include"packet_fmt.hpp"
 #include<functional>
 #include<thread>
 #include<msgpack.hpp>
@@ -65,8 +66,9 @@ void chat_system::on_io_input(const std::string& msg){
         [](const ENetPeer* p)->const bool{return (uintptr_t)(p->data) == (uintptr_t)(0xff);},
         [this,&msg](ENetPeer* p){
             PacketStream pstream;
+            pstream.write(this->m_info.id);
             pstream.write(msg);
-            enet_peer_send(p, 0, pstream.packet());
+            enet_peer_send(p, 1, pstream.packet());
         });
     m_net->flush();
     return;
@@ -79,6 +81,7 @@ void chat_system::on_net(const ENetEvent* e){
     if(e->type == ENET_EVENT_TYPE_CONNECT){
         e->peer->data = (void*)(uintptr_t)(0xff);
         PacketStream pstream;
+        pstream.write(SysRequestID::REGISTER_USER);
         pstream.write(m_info);
         enet_peer_send(e->peer, 0, pstream.packet());
         m_net->flush();
