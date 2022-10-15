@@ -21,14 +21,11 @@ Manjaro Linuxでビルドができることを確認しました。
 - [Boost](https://www.boost.org/)
 - [msgpack-c](https://github.com/msgpack/msgpack-c/tree/cpp_master)
 
-そしてC++20に対応したコンパイラと、以下のコマンドを使用できるようにしてください。
-
-- make
-- pkgconf
+C++20に対応したコンパイラを用意してください．
+またバージョンが3.20以上のCMakeを用意してください．
 
 ### ビルド手順
-以下のとおりに`cmake`を実行するとクライアント、サーバ両方が生成されます。
-ビルド環境によっては、makefileの変数`CXX`を設定する必要があるかもしれません。
+以下のとおりに`cmake`を実行すると、クライアント、サーバプログラムが`bin`ディレクトリ内に生成されます。
 
 ```
 cmake -S . -B .build
