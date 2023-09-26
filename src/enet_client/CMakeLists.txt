@@ -8,6 +8,6 @@ target_include_directories(enet_client PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 #ライブラリを追加
 target_link_libraries(
-    enet_client PRIVATE
+    enet_client PUBLIC
     basic_enet
 )
