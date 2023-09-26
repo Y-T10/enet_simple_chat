@@ -10,6 +10,6 @@ target_include_directories(enet_packet_stream PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 target_link_libraries(
     enet_packet_stream PRIVATE
     cpp_common
-    PkgConfig::libenet
+    enet
     msgpackc-cxx
 )
