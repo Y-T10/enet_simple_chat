@@ -16,7 +16,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_subdirectory(lib)
 
 #必要なライブラリを探す
-include(find_pkg_conf.cmake)
 find_package(Boost REQUIRED)
 find_package(msgpack REQUIRED)
 find_pkg_conf(libenet)
