@@ -9,7 +9,6 @@ target_include_directories(server PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(
     server PRIVATE
-    cpp_common
     enet_host
     enet_packet_stream
     sig_event
