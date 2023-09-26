@@ -1,8 +1,7 @@
 # 生成物を除外
-client
-server
 *.exe
 *.o
+*bin*/
 *build*/
 
 # エディタ固有のデータを除外
