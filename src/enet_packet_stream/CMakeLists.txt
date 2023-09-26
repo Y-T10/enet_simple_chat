@@ -9,11 +9,10 @@ target_include_directories(enet_packet_stream PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 #ライブラリを追加
 target_link_libraries(
     enet_packet_stream PRIVATE
-    enet
-    msgpackc-cxx
+    basic_enet
 )
 
 target_link_libraries(
     enet_packet_stream PUBLIC
-    msgpackc-cxx
+    msgpack-cxx
 )
