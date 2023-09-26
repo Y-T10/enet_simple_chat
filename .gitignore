@@ -6,6 +6,8 @@
 
 # エディタ固有のデータを除外
 .vscode/
+.cache/
+compile_commands.json
 
 #ゴミ箱を追加
 .trash/
