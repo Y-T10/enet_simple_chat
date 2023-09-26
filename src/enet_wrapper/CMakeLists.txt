@@ -9,7 +9,10 @@ target_include_directories(basic_enet PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 #ライブラリを追加
 target_link_libraries(
     basic_enet PRIVATE
-    cpp_common
-    PkgConfig::libenet
     Boost::headers
+)
+
+target_link_libraries(
+    basic_enet PUBLIC
+    enet::enet
 )

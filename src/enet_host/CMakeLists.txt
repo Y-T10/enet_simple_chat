@@ -1,13 +1,13 @@
 #ライブラリを追加
-add_library(sig_event)
+add_library(enet_host)
 
 #プログラムファイルを追加
 # - ${CMAKE_CURRENT_SOURCE_DIR}: このファイルがあるディレクトリ
-target_sources(sig_event PRIVATE sig_event.cpp)
-target_include_directories(sig_event PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_sources(enet_host PRIVATE enet_host.cpp)
+target_include_directories(enet_host PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 #ライブラリを追加
 target_link_libraries(
-    sig_event PRIVATE
-    cpp_common
+    enet_host PUBLIC
+    basic_enet
 )

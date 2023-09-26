@@ -1,0 +1,8 @@
+[submodule "lib/msgpack"]
+	path = lib/msgpack
+	url = https://github.com/msgpack/msgpack-c.git
+	branch = cpp_master
+[submodule "lib/enet"]
+	path = lib/enet
+	url = git@github.com:Y-T10/enet.git
+	branch = master

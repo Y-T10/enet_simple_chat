@@ -5,9 +5,3 @@ add_library(console_io)
 # - ${CMAKE_CURRENT_SOURCE_DIR}: このファイルがあるディレクトリ
 target_sources(console_io PRIVATE console_io.cpp)
 target_include_directories(console_io PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-#ライブラリを追加
-target_link_libraries(
-    console_io PRIVATE
-    cpp_common
-)
