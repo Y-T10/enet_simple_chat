@@ -12,3 +12,8 @@ target_link_libraries(
     enet
     msgpackc-cxx
 )
+
+target_link_libraries(
+    enet_packet_stream PUBLIC
+    msgpackc-cxx
+)
