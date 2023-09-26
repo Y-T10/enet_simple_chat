@@ -17,8 +17,6 @@ add_subdirectory(lib)
 
 #必要なライブラリを探す
 find_package(Boost REQUIRED)
-find_package(msgpack REQUIRED)
-find_pkg_conf(libenet)
 
 #サブディレクトリ
 add_subdirectory(src)
