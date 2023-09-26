@@ -5,6 +5,15 @@ cmake_minimum_required(VERSION 3.20)
 # - cmake_policyでtarget_sourcesのパスを自動で調節する
 project(simple_enet_chat VERSION 0.0.1 LANGUAGES CXX)
 cmake_policy(SET CMP0076 NEW)
+cmake_policy(SET CMP0128 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0128 NEW)
+cmake_policy(SET CMP0074 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0074 NEW)
+cmake_policy(SET CMP0077 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+set(CMAKE_BUILD_TYPE Release)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 #C++の共通設定を追加
 add_compile_options(-Wall $<$<CONFIG:Debug>:-g3>)
