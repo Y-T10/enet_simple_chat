@@ -6,3 +6,6 @@
 	path = lib/enet
 	url = https://github.com/Y-T10/enet.git
 	branch = master
+[submodule "lib/SDL"]
+	path = lib/SDL
+	url = https://github.com/libsdl-org/SDL.git
