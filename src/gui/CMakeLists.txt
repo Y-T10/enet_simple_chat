@@ -9,6 +9,6 @@ target_include_directories(gui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(
     gui PRIVATE
-    SDL2::SDL2main
-    SDL2-static
+    $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+    SDL2::SDL2
 )
