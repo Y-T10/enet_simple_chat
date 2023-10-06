@@ -99,7 +99,7 @@ void server_system::on_request(ENetPeer* peer ,PacketUnpacker& unpacker){
 }
 
 void server_system::on_message(ENetPeer* peer, PacketUnpacker& unpacker){
-    if(!m_user.contains(peer)){
+    if(!m_user.count(peer)){
         std::cerr << "received from a unregistered user." << std::endl;
         enet_peer_disconnect(peer, 0);
         return;
