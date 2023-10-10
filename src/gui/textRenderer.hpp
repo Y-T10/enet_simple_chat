@@ -32,3 +32,8 @@ class Font_impl : public boost::intrusive_ref_counter<Font_impl> {
 };
 
 using Font = boost::intrusive_ptr<Font_impl>;
+
+/// 内部でフォントのキャッシュを持つ
+class FontDB {
+    public:
+};
