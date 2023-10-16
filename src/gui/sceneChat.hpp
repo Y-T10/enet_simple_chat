@@ -1,6 +1,8 @@
 #pragma once
 
 #include "SDL_blendmode.h"
+#include "SDL_events.h"
+#include "SDL_keycode.h"
 #include "SDL_pixels.h"
 #include "SDL_rect.h"
 #include "SDL_timer.h"
@@ -12,6 +14,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <string>
 #include <tuple>
 
 const SDL_Rect GetTextureSize (const SDL_Texture* texture) noexcept {
@@ -49,6 +52,8 @@ class SceneChat final {
         jp_font->setFontSize(18);
         assert(jp_font);
 
+        std::string inputText = "";
+
         /* run the program until told to stop. */
         for (SDL_bool keep_going = SDL_TRUE; keep_going;) {
             /* run through all pending events until we run out. */
@@ -62,6 +67,22 @@ class SceneChat final {
                         if (event.key.keysym.sym == SDLK_ESCAPE) {
                             keep_going = SDL_FALSE;
                         }
+                        if (event.key.keysym.sym == SDLK_RETURN) {
+                            const SDL_Rect textBuffSize = {.x = 0, .y = 0, .w = 100, .h = 50};
+                            SDL_SetTextInputRect(&textBuffSize);
+                            SDL_StartTextInput();
+                        }
+                        break;
+                    case SDL_TEXTINPUT:
+                        inputText = std::string(event.text.text);
+                        SDL_StopTextInput();
+                        break;
+                    case SDL_TEXTEDITING:
+                        inputText = std::string(event.edit.text);
+                        break;
+                    case SDL_TEXTEDITING_EXT:
+                        inputText = std::string(event.editExt.text);
+                        SDL_free(event.editExt.text);
                         break;
                 }
             }
@@ -74,7 +95,7 @@ class SceneChat final {
             /* set the color to white */
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
-            if(!WriteText(textBuff, jp_font, SDL_Color{.r = 0, .g = 100, .b = 150, .a= 255}, "hello world. こんにちは 世界．")){
+            if(!WriteText(textBuff, jp_font, SDL_Color{.r = 0, .g = 100, .b = 150, .a= 255}, inputText)){
                 fprintf(stderr, "%s\n", SDL_GetError());
                 SDL_DestroyTexture(textBuff);
                 return;
