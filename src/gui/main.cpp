@@ -13,6 +13,10 @@ static SDL_Renderer *renderer = NULL;
 
 static int setup_program(int argc, char **argv)
 {
+    if(!SDL_SetHint(SDL_HINT_IME_SUPPORT_EXTENDED_TEXT, "1")){
+        return -1;
+    }
+
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
         SDL_Log("SDL_Init(SDL_INIT_VIDEO) failed: %s", SDL_GetError());
         return -1;
