@@ -3,6 +3,7 @@
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_video.h>
 
+#include "SDL_ttf.h"
 #include "title.hpp"
 #include "SceneManager.hpp"
 
@@ -13,6 +14,10 @@ static int setup_program(int argc, char **argv)
 {
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
         SDL_Log("SDL_Init(SDL_INIT_VIDEO) failed: %s", SDL_GetError());
+        return -1;
+    }
+
+    if (TTF_Init() == -1) {
         return -1;
     }
 
@@ -35,6 +40,7 @@ static void shutdown_program(void)
 {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    TTF_Quit();
     SDL_Quit();
 }
 
