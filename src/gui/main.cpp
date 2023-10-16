@@ -6,6 +6,7 @@
 #include "SDL_ttf.h"
 #include "title.hpp"
 #include "SceneManager.hpp"
+#include "sceneChat.hpp"
 
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -44,10 +45,14 @@ static void shutdown_program(void)
     SDL_Quit();
 }
 
-using MainSceneMgr = SceneMgr<SceneTitle>;
+using MainSceneMgr = SceneMgr<SceneTitle, SceneChat>;
 
 struct SwitcherMainScene {
     void operator()(MainSceneMgr& mgr, SceneTitle& scene){
+        mgr.setCurrentScene(SceneChat());
+    };
+
+    void operator()(MainSceneMgr& mgr, SceneChat& scene){
         mgr.setFinishFlag(true);
     };
 };
