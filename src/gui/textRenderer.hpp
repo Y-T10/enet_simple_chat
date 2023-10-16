@@ -15,11 +15,30 @@ class Font_impl : public boost::intrusive_ref_counter<Font_impl> {
         m_font = NULL;
     }
 
+    Font_impl(const Font_impl& rval) noexcept = delete;
+    Font_impl& operator=(const Font_impl& rval) noexcept = delete;
+    
+    Font_impl(Font_impl&& rval) noexcept:
+    m_font(std::move(rval.m_font)){
+        rval.m_font = NULL;
+    };
+
+    Font_impl& operator=(Font_impl&& rval) noexcept {
+        if(this == &rval){
+            return *this;
+        }
+
+        m_font = std::move(rval.m_font);
+        rval.m_font = NULL;
+
+        return *this;
+    }
+
     void setFontSize(const int pt) noexcept {
         TTF_SetFontSize(m_font, pt);
     };
 
-    const TTF_Font* getFontRaw() noexcept {
+    const TTF_Font* get() noexcept {
         return m_font;
     };
 
