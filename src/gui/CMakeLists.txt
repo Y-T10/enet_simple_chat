@@ -4,7 +4,7 @@ set_target_properties(gui PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 #プログラムファイルを追加
-target_sources(gui PRIVATE main.cpp)
+target_sources(gui PRIVATE main.cpp textRenderer.cpp textRenderer.cpp font.cpp)
 target_include_directories(gui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(
