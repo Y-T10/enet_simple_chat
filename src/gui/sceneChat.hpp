@@ -102,7 +102,7 @@ class SceneChat final {
             /* you have to draw the whole window every frame. Clearing it makes sure the whole thing is sane. */
             SDL_RenderClear(renderer);  /* clear whole window to that fade color. */
 
-            if(!WriteText(textBuff, jp_font, SDL_Color{.r = 0, .g = 100, .b = 150, .a= 255}, inputText)){
+            if(!WriteText(textBuff, jp_font, SDL_Color{.r = 0, .g = 100, .b = 150, .a= 255}, SDL_Color{.r = 0, .g = 0, .b = 0, .a= 0}, inputText)){
                 fprintf(stderr, "%s\n", SDL_GetError());
                 SDL_DestroyTexture(textBuff);
                 return;
