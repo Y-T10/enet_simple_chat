@@ -54,6 +54,10 @@ class SceneChat final {
 
         std::string inputText = "";
 
+        if(SDL_IsTextInputActive()){
+            SDL_StopTextInput();
+        }
+
         /* run the program until told to stop. */
         for (SDL_bool keep_going = SDL_TRUE; keep_going;) {
             /* run through all pending events until we run out. */
@@ -66,16 +70,21 @@ class SceneChat final {
                     case SDL_KEYDOWN:  /* quit if user hits ESC key */
                         if (event.key.keysym.sym == SDLK_ESCAPE) {
                             keep_going = SDL_FALSE;
+                            break;
                         }
                         if (event.key.keysym.sym == SDLK_RETURN) {
-                            const SDL_Rect textBuffSize = {.x = 0, .y = 0, .w = 100, .h = 50};
+                            const SDL_Rect textBuffSize = {.x = 0, .y = 0, .w = 100, .h = 100};
                             SDL_SetTextInputRect(&textBuffSize);
                             SDL_StartTextInput();
+                            break;
                         }
                         break;
                     case SDL_TEXTINPUT:
                         inputText = std::string(event.text.text);
-                        SDL_StopTextInput();
+                        if(SDL_IsTextInputActive()){
+                            SDL_StopTextInput();
+                        }
+                        SDL_LogInfo(SDL_LOG_CATEGORY_TEST, "input: %s", inputText.c_str());
                         break;
                     case SDL_TEXTEDITING:
                         inputText = std::string(event.edit.text);
@@ -87,13 +96,11 @@ class SceneChat final {
                 }
             }
 
-            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+            /* set the color to white */
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
             /* you have to draw the whole window every frame. Clearing it makes sure the whole thing is sane. */
             SDL_RenderClear(renderer);  /* clear whole window to that fade color. */
-
-            /* set the color to white */
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
             if(!WriteText(textBuff, jp_font, SDL_Color{.r = 0, .g = 100, .b = 150, .a= 255}, inputText)){
                 fprintf(stderr, "%s\n", SDL_GetError());
