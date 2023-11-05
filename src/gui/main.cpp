@@ -17,8 +17,8 @@ static int setup_program(int argc, char **argv)
         return -1;
     }
 
-    if (SDL_Init(SDL_INIT_VIDEO) == -1) {
-        SDL_Log("SDL_Init(SDL_INIT_VIDEO) failed: %s", SDL_GetError());
+    if (SDL_Init(SDL_INIT_VIDEO & SDL_INIT_EVENTS) == -1) {
+        SDL_Log("SDL_Init(SDL_INIT_VIDEO & SDL_INIT_EVENTS) failed: %s", SDL_GetError());
         return -1;
     }
 
