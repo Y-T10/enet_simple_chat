@@ -7,6 +7,7 @@
 #include "SDL_rect.h"
 #include "SDL_timer.h"
 #include "SDL_render.h"
+#include "font.hpp"
 #include "utility.hpp"
 #include "SDL2/SDL.h"
 
@@ -46,9 +47,8 @@ class SceneChat final {
 
         const SDL_Rect textBuffSize = GetTextureSize(textBuff);
 
-        //auto jp_font = LoadFont("", );
+        auto jp_font = LoadFont("IPAexゴシック");
 
-        Font jp_font(new Font_impl("/usr/share/fonts/truetype/fonts-japanese-gothic.ttf"));
         jp_font->setFontSize(18);
         assert(jp_font);
 
