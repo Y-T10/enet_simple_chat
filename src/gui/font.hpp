@@ -2,6 +2,7 @@
 
 #include "SDL_ttf.h"
 #include <filesystem>
+#include <string>
 #include "boost/smart_ptr/intrusive_ref_counter.hpp"
 #include "boost/smart_ptr/intrusive_ptr.hpp"
 
@@ -26,3 +27,5 @@ class Font_impl : public boost::intrusive_ref_counter<Font_impl> {
 };
 
 using Font = boost::intrusive_ptr<Font_impl>;
+
+const Font LoadFont(const std::string& fontName);
