@@ -12,4 +12,5 @@ target_link_libraries(
     $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
     SDL2::SDL2
     SDL2_ttf::SDL2_ttf
+    Fontconfig::Fontconfig
 )

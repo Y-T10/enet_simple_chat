@@ -26,6 +26,7 @@ add_subdirectory(lib)
 
 #必要なライブラリを探す
 find_package(Boost REQUIRED)
+find_package(Fontconfig REQUIRED)
 
 #サブディレクトリ
 add_subdirectory(src)
