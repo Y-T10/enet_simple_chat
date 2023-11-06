@@ -39,7 +39,7 @@ Font_impl::operator bool() noexcept {
 const Font GetFontPaht(FcPattern* fontPat) noexcept {
 	if (FcChar8* file = NULL; FcPatternGetString(fontPat, FC_FILE, 0, &file) == FcResultMatch) {
 		SDL_LogInfo(SDL_LOG_CATEGORY_TEST, "found font path: %s\n", (char*)file);
-        return Font(new Font_impl((char*)file));
+        return MakeFont((char*)file);
 	}
     return nullptr;
 }
