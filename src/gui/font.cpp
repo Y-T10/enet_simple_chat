@@ -37,11 +37,17 @@ Font_impl::operator bool() noexcept {
 }
 
 const Font GetFontPaht(FcPattern* fontPat) noexcept {
-	if (FcChar8* file = NULL; FcPatternGetString(fontPat, FC_FILE, 0, &file) == FcResultMatch) {
-		SDL_LogInfo(SDL_LOG_CATEGORY_TEST, "found font path: %s\n", (char*)file);
-        return MakeFont((char*)file);
-	}
-    return nullptr;
+	FcChar8* file = NULL;
+    if (FcPatternGetString(fontPat, FC_FILE, 0, &file) != FcResultMatch) {
+        return nullptr;
+    }
+
+	SDL_LogInfo(SDL_LOG_CATEGORY_TEST, "found font path: %s\n", (char*)file);
+    const auto filePaht = std::filesystem::path((char*)file);
+    if(filePaht.empty() || !std::filesystem::exists(filePaht)) {
+        return nullptr;
+    }
+    return MakeFont(filePaht);
 }
 
 const Font LoadFontInternal(FcConfig* config, FcPattern* pat) noexcept {
