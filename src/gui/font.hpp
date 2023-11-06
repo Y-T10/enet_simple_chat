@@ -34,4 +34,8 @@ inline boost::intrusive_ptr<T> make_intrusive(Args&&... args) {
     return boost::intrusive_ptr<T>(new T(std::forward<Args...>(args)...));
 }
 
+inline const Font MakeFont(const std::filesystem::path& fontFile) noexcept {
+    return make_intrusive<Font::element_type>(fontFile);
+}
+
 const Font LoadFont(const std::string& fontName);
