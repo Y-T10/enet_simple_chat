@@ -38,6 +38,7 @@ Font_impl::operator bool() noexcept {
 
 const Font GetFontPaht(FcPattern* fontPat) noexcept {
 	FcChar8* file = NULL;
+    // パターンからフォントファイルへのパスを得る
     if (FcPatternGetString(fontPat, FC_FILE, 0, &file) != FcResultMatch) {
         return nullptr;
     }
@@ -52,6 +53,8 @@ const Font GetFontPaht(FcPattern* fontPat) noexcept {
 
 const Font LoadFontInternal(FcConfig* config, FcPattern* pat) noexcept {
     FcResult result;
+    // configに従ってpatのパターンに最も近いフォントの情報を返す．
+    // 検索結果はresultが持ち、フォントの情報は関数が返す．
     FcPattern* font = FcFontMatch(config, pat, &result);
     if(!font) {
         return nullptr;
@@ -63,12 +66,23 @@ const Font LoadFontInternal(FcConfig* config, FcPattern* pat) noexcept {
     return foundFont;
 }
 
+// 書体: 統一のデザインで表現された字形の集合．スタイルまでを気にしてフォントを指す際に使用されることが多い(主観では)．
+// フォントファミリー: 複数の書体を束ねるグループ．フォントの名前として使用されることが多い(主観では)．
 const Font LoadFont(const std::string& fontName) {
 	FcInit();
+    // 既定のfontconfig設定ファイルの読み込む．
+    // 既定の利用可能なフォントに関する情報を構築する．
 	FcConfig* config = FcInitLoadConfigAndFonts();
+    // fontconfig設定は、パターンの修正とフォントに関する情報を持つ．
+    // コレに情報を追加することで、独自のフォントデータベースが構築できる．
 
+    // フォント名からパターンを生成する
+    // TODO: パースではなく、オブジェクト構築に変更する
 	FcPattern* pat = FcNameParse((const FcChar8*)fontName.c_str());
+    // fontconfig設定に従ってパターンを修正する．
 	FcConfigSubstitute(config, pat, FcMatchPattern);
+    // 既定の置き換えによって修正したパターンを正規化する．
+    // 正規化することで、後の検索処理を容易にする．
 	FcDefaultSubstitute(pat);
     const auto foundFont = LoadFontInternal(config, pat);
 	FcPatternDestroy(pat);
@@ -77,3 +91,11 @@ const Font LoadFont(const std::string& fontName) {
 
     return foundFont;
 }
+
+/*
+参考文献
+- https://www.freedesktop.org/software/fontconfig/fontconfig-user.html
+- https://gist.github.com/CallumDev/7c66b3f9cf7a876ef75f
+- https://www.freedesktop.org/software/fontconfig/fontconfig-devel/x19.html
+- https://www.freedesktop.org/software/fontconfig/fontconfig-devel/x103.html#AEN106
+*/
